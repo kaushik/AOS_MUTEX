@@ -171,18 +171,21 @@ bool Torum::sendToken(){
 		printf("sendToken: queue remove returned empty/not found\n");
 		//return false;
 	}else{
-	struct Packet release;
-		release.TYPE = RELEASE;
-		release.ORIGIN = ID;
-		release.sender = ID;
-		release.SEQ = sequenceNo;
-	for(int i=0;i<quorumsize;i++){
-			com.sendMessageToID(release,quorum[ID][i]);
+		if(HOLDER == ID){
+		//token was with you and you are granting it to some one else
+		//Release is sent only by such nodes and not arbitrators of Token
+			struct Packet release;
+			release.TYPE = RELEASE;
+			release.ORIGIN = ID;
+			release.sender = ID;
+			release.SEQ = sequenceNo;
+			for(int i=0;i<quorumsize;i++){
+					com.sendMessageToID(release,quorum[ID][i]);
+			}
+			//pthread_mutex_lock(&sharedQLock);
+			queue->update(quorum,quorumsize,ID);
+			//pthread_mutex_unlock(&sharedQLock);
 		}
-	//pthread_mutex_lock(&sharedQLock);
-	queue->update(quorum,quorumsize,ID);
-	//pthread_mutex_unlock(&sharedQLock);
-	
 	struct Packet token;
 		token.TYPE = SEND_TOKEN;
 		token.ORIGIN = ID;
