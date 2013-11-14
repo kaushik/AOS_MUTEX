@@ -50,7 +50,8 @@ bool Torum::requestCS(){
 	pthread_mutex_unlock(&sharedQLock);
 	*/
 	if( HOLDER == -1 ){
-		for(int i=0;i<quorumsize;i++){
+		int i;
+		for(i=0;i<quorumsize;i++){
 			com.sendMessageToID(request,quorum[ID][i]);
 		}
 	}else{
@@ -86,7 +87,11 @@ printf("in receive Request, request from %d\n",request.ORIGIN);
 					//pthread_mutex_lock(&sharedQLock);
 					queue->add(request);
 					//pthread_mutex_unlock(&sharedQLock);
-
+					if(!inCS){// Node is idle after completing CS.
+						Packet top = queue->top();
+						if(top.TYPE !=-1)
+							sendToken();
+					}
 				}
 			//else drop the request
 		}
@@ -104,7 +109,7 @@ bool Torum::receiveToken(Packet token){
 	}
 	//pthread_mutex_unlock(&sharedQLock);
 
-	if(ID == top.ORIGIN || top.ORIGIN == CONTROLLER_ID){// if current node is top of the queue
+	if(ID == top.ORIGIN || token.ORIGIN == CONTROLLER_ID){// if current node is top of the queue
 		HOLDER = ID;
 		struct Packet havetkn;
 		havetkn.TYPE = HAVE_TOKEN;
@@ -158,7 +163,7 @@ bool Torum::receiveHaveTkn(Packet havtkn){
 bool Torum::sendToken(){
 	Packet top = queue->top();
 	if(top.TYPE == -1){
-			printf("receiveToken: queue top returned empty\n");
+			printf("sendToken: queue top returned empty\n");
 					//return false;
 		}
 	Packet ret = queue->remove(top.ORIGIN);
@@ -190,13 +195,13 @@ bool Torum::sendToken(){
 
 bool Torum::EnterTheCS(){
 	inCS = true;
-	printf("Node '%d' in CRITICAL SECTION\n",ID);
+	printf("\n******Node '%d' in CRITICAL SECTION******\n",ID);
 	sleep(1);
 	inCS = false;
 }
 
 void Torum::displayStatus(){
-	printf("NODE STATUS: Seq=%d, Holder=%d, Queue Size=%d",node->sequenceNo,node->HOLDER,node->queue->size());
+	printf("NODE STATUS: Seq=%d, Holder=%d, Queue Size=%d\n",sequenceNo,HOLDER,queue->size());
 }
-}
+
 

@@ -77,7 +77,7 @@ int communication::readFromSocket(int sockfd, void *buffer, int size){
 		if (n_recv < 0) {
 			DieWithError("\nError in Receiving\n");
 		}
-	cout<<"--Msg Received "<<buffer<<"---"<<endl;
+	cout<<"--->Msg Received "<<buffer<<"---"<<endl;
 	return n_recv;
 }
 
@@ -93,7 +93,7 @@ int communication::sendMessage(struct Packet message, char dest_IP_Address[15],i
 }
 //000
 int communication::sendMessageToID(struct Packet message,int id){
-	printf("Sending a message to %d , IP: %s\n",id,mapIDtoIP[id]);
+	printf("--->Sending a message to %d , IP: %s\n",id,mapIDtoIP[id]);
 	return sendMessage(message,mapIDtoIP[id],LISTEN_PORT3);
 }
 
