@@ -23,6 +23,8 @@ class Controller
 {
 private:
 	int Algorithm;
+	int numOfCS;
+	int numOfMsg;
 
 public:
 

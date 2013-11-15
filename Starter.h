@@ -12,6 +12,8 @@
 #include <string>
 #include <iostream>
 #include <pthread.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include "Algo9.h"
 #include "communication.h"
 
@@ -27,7 +29,10 @@ private:
 	char **mapIDtoIP;
 	char CS_FILENAME[25];
 	void parseMsg(const string& s,const string& delim,std::vector<string>& tokens);
+	
 public:
+	static int messageCounter=0;
+	struct timeval start, end;
 	Starter();
 	virtual ~Starter();
 	void init();

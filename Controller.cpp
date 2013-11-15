@@ -267,6 +267,20 @@ void Controller::initiate(Controller *c){
 
 }
 
+void Controller::endProcess()
+{
+	printf("End of Algorithm!!\n Calculating the statistics . . .\n");
+	communication com;
+	int server;
+	int clientFd=com.OpenListener(server,LISTEN_PORT_END);
+	int messageCounter;
+	com.readFromSocket(clientFd,&messageCounter,sizeof(int));
+	
+	shutdown(clientFd,2);
+	close(clientFd);
+	close(server);
+	
+}
 int main()
 {
 

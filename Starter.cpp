@@ -13,11 +13,13 @@ Starter::~Starter() {
 }
 
 void Starter::init(){
-	char controllerIP[15] = "10.176.67.108";
+	char controllerIP[MAXLENGTH_IP_ADDR] = CONTROLLER_IP;
+	//messageCounter=0;
 	//char controllerIP[16] = "10.176.67.88";
 	int port = LISTEN_PORT;
 	registerAtController(controllerIP, port);
 	decideAlgorithm();
+	
 }
 
 void Starter::parseMsg(const string& s,const string& delim,std::vector<string>& tokens)
@@ -228,18 +230,37 @@ void *TorumProcess(void* queue) {
 		if (item->TYPE == SEND_TOKEN){
 			printf("SEND_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveToken(*item);
+			if(item->sender != node->ID)
+			Starter::messageCounter++;
 		}else if (item->TYPE == MAKE_REQUEST){
 			printf("MAKE_REQUEST recieved from Controller %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->requestCS();
 		}else if (item->TYPE == HAVE_TOKEN){
+			if(item->sender != node->ID)
+						Starter::messageCounter++;
 			printf("HAVE_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveHaveTkn(*item);
 		}else if (item->TYPE == RELEASE){
+			if(item->sender != node->ID)
+						Starter::messageCounter++;
 			printf("RELEASE recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveRelease(*item);
 		}else if (item->TYPE == REQUEST){
+			if(item->sender != node->ID)
+						Starter::messageCounter++;
 			printf("REQUEST recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveRequest(*item);
+		}
+		else if(item->TYPE == END_PROCESS)
+		{
+			communication com;
+			char cIP[MAXLENGTH_IP_ADDR]=CONTROLLER_IP;
+			int sockFd=com.connectToServer(cIP,LISTEN_PORT_END);
+			int counter=Starter::messageCounter;
+			com.writeToSocket(sockFd,&counter,sizeof(int));
+			
+			shutdown(sockFd,0);
+			close(sockFd);
 		}
 		delete item;
 	}
