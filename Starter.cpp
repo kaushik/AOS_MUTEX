@@ -156,6 +156,8 @@ void Starter::decideAlgorithm(){
 		strcpy(mapIDtoIP[i],recvdValues[i].c_str());
 		printf("%d\t%s\n",i,mapIDtoIP[i]);
 	}
+	com.readFromSocket(clifd,CS_FILENAME,25);
+	printf("File Name of Critical section resource is %s\n",CS_FILENAME);
 	shutdown(clifd,2);
 	com.closeSocket(clifd);
 	com.closeSocket(serfd);
@@ -182,6 +184,7 @@ void Starter::Algorithm2(){
 	node->getQuorumTable(Quorum,quorumSize,NumNodes);
 	//000
 	node->com.setMapIDtoIP(mapIDtoIP);
+	strcpy(node->CS_FILENAME,CS_FILENAME);
 
 
 	wqueue<Packet*> queue;

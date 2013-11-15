@@ -197,6 +197,8 @@ void Controller::decideAlgorithm(){
 		}
 		printf("strtosend: %s",strToSend.c_str());
 		con.writeToSocket(sockfd,const_cast<char*> (strToSend.c_str()),4095);
+		char *csfilename=CS_FILENAME;
+		con.writeToSocket(sockfd,csfilename,25);
 		shutdown(sockfd,0);
 		close(sockfd);
 	}
@@ -220,25 +222,7 @@ void Controller::Algorithm2(){
 	printf("\nYou have chosen Token and Quorum Based Mutual Exclusion Algorithm: Torum\n");
 	sendTokenToNode();
 	UserInput();
-/*
-	Packet pack1;
-	pack1.TYPE = MAKE_REQUEST;
-	pack1.ORIGIN = CONTROLLER_ID;
-	pack1.SEQ =1;
-	pack1.sender = CONTROLLER_ID;
-	communication com;
-	char desIP[16];
-	strncpy(desIP,mapIPtoID[1],16);
-	printf("sending MAKE_REQUEST to Node 1 at IP %s\n",desIP);
 
-
-	com.sendMessage(pack1,desIP,LISTEN_PORT3);
-	pack1.SEQ =2;
-	com.sendMessage(pack1,desIP,LISTEN_PORT3);
-	pack1.SEQ =3;
-	//com.sendMessage(pack1,desIP,LISTEN_PORT3);
-
-	 */
 }
 
 void Controller::UserInput(){
@@ -250,6 +234,17 @@ void Controller::UserInput(){
 		cin>>id;
 		sendCSrequests(id);
 	}
+}
+
+void createCSFile(){
+		char *fname = CS_FILENAME;
+		ofstream myfile (fname,ios::out);
+		  if (myfile.is_open())
+		  {
+		    myfile <<"#This file contains log of Critical Section Requests from the Nodes"<<endl;
+		    myfile.close();
+		  }
+		  else cout << "Unable to open file";
 }
 
 void Controller::sendCSrequests(int node){

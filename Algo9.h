@@ -2,6 +2,7 @@
 #define ALGO9_H_
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include "MessageFormat.h"
 #include "communication.h"
@@ -19,6 +20,7 @@ protected:
 	int quorumsize;
 	int NumNodes;
 	bool inCS;
+
 	//vector<vector<int>> quorum;;
 	pthread_mutex_t sharedQLock;
 	LexiQueue *queue;
@@ -26,6 +28,7 @@ protected:
 
 public:
 	communication com;
+	char CS_FILENAME[25];
 	static Torum* getInstance();
 	void init();
 	bool setID(int id);

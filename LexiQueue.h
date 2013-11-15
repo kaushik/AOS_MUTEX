@@ -29,7 +29,7 @@ public:
 	bool add(Packet in);
 	int size();
 	bool isEmpty();
-	bool update(int **quorum,int qsize,int ID);
+	bool updateTorumQ(int **quorum,int qsize,int ID);
 };
 
 class BlockingQueue{

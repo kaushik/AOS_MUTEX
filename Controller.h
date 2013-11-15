@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include<string>
 #include<errno.h>
+#include<fstream>
 #include <stdio.h>      /* for printf() and fprintf() */
 #include <sys/socket.h> /* for socket(), bind(), and connect() */
 #include <arpa/inet.h>  /* for sockaddr_in and inet_ntoa() */
@@ -17,6 +18,7 @@ using namespace std;
 
 #define MAXNODES 7
 #define QuorumSize 3
+#define CS_FILENAME "Resource.txt"
 class Controller
 {
 private:

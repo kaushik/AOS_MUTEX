@@ -25,6 +25,7 @@ private:
 	int **Quorum;
 	int id;
 	char **mapIDtoIP;
+	char CS_FILENAME[25];
 	void parseMsg(const string& s,const string& delim,std::vector<string>& tokens);
 public:
 	Starter();

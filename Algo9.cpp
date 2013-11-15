@@ -134,7 +134,7 @@ bool Torum::receiveRelease(Packet release){
 	if(sequenceNo<release.SEQ) sequenceNo = release.SEQ;
 	HOLDER = -1;
 	//pthread_mutex_lock(&sharedQLock);
-	queue->update(quorum,quorumsize,ID);
+	queue->updateTorumQ(quorum,quorumsize,ID);
 	//pthread_mutex_unlock(&sharedQLock);
 	return true;
 }
@@ -183,7 +183,7 @@ bool Torum::sendToken(){
 					com.sendMessageToID(release,quorum[ID][i]);
 			}
 			//pthread_mutex_lock(&sharedQLock);
-			queue->update(quorum,quorumsize,ID);
+			queue->updateTorumQ(quorum,quorumsize,ID);
 			//pthread_mutex_unlock(&sharedQLock);
 		}
 	struct Packet token;
@@ -196,9 +196,22 @@ bool Torum::sendToken(){
 	}
 }
 
+void writeToFile(string filename,string line){
+	ofstream myfile (filename.c_str(),ios::out | ios::app);
+	  if (myfile.is_open())
+	  {
+	    myfile <<line<<endl;
+	    myfile.close();
+	  }
+	  else cout << "Unable to open file";
+}
 bool Torum::EnterTheCS(){
 	inCS = true;
 	printf("\n******Node '%d' in CRITICAL SECTION******\n",ID);
+	string str ="";
+	char buff[4095];
+	sprintf(buff,"Node %d entered CS, Seq: %d \n",ID,sequenceNo);
+	writeToFile("CS.log","");
 	sleep(1);
 	inCS = false;
 }

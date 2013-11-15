@@ -49,7 +49,7 @@ bool LexiQueue::add(Packet in){
 	return true;
 }
 
-bool LexiQueue::update(int **quorum,int qsize,int ID){
+bool LexiQueue::updateTorumQ(int **quorum,int qsize,int ID){
 
 
 	while(!pq.empty()){
