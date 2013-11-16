@@ -227,16 +227,22 @@ void Controller::Algorithm2(){
 void Controller::UserInput(){
 	printf("Enter your requests for critical section here...\n");
 	printf("");
-	for(int i=0;i<10;i++){
+	for(int i=0;;i++){
 		int id=0;
 		printf("enter id to send request for CS\n");
 		cin>>id;
-		sendCSrequests(id);
+		if(id == 999)
+			endProcess();
+		else
+			sendCSrequests(id);
 	}
 }
 
 void createCSFile(){
-		char *fname = CS_FILENAME;
+		string str = "../";
+		str += CS_FILENAME;
+		char *fname = new char[30];
+		strcpy(fname,str.c_str());
 		ofstream myfile (fname,ios::out);
 		  if (myfile.is_open())
 		  {
@@ -263,6 +269,7 @@ void Controller::initiate(Controller *c){
 	numOfCSRequests = 0;
 	TotalNoMsgs = 0;
 	TotalTime = 0;
+	createCSFile();
 	pthread_t listen;
 	pthread_create(&listen, NULL,listener,(void*)c );
 	pthread_join(listen,NULL);
@@ -271,6 +278,20 @@ void Controller::initiate(Controller *c){
 
 void Controller::endProcess()
 {
+	Packet pack1;
+	pack1.TYPE = END_PROCESS;
+	pack1.ORIGIN = CONTROLLER_ID;
+	pack1.SEQ =1;
+	pack1.sender = CONTROLLER_ID;
+	communication com;
+	char desIP[16];
+	for(int n=0;n<MAXNODES;n++){
+	strncpy(desIP,mapIPtoID[n],16);
+	printf("sending END_PROCESS to Node %d at IP %s\n",n,desIP);
+	com.sendMessage(pack1,desIP,LISTEN_PORT3);
+	}
+
+
 	int TotalNoMsgs = 0;
 	int TotalTime = 0;
 	printf("End of Algorithm!!\n Calculating the statistics . . .\n");
@@ -283,7 +304,7 @@ void Controller::endProcess()
 		socklen_t clntLen;            /* Length of client address data structure */
 
 
-		echoServPort = LISTEN_PORT;  /* First arg:  local port */
+		echoServPort = LISTEN_PORT_END;  /* First arg:  local port */
 
 		/* Create socket for incoming connections */
 		if ((servSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -340,11 +361,15 @@ void Controller::endProcess()
 				printf("\nError in Closing");
 				exit(0);
 			}
-		float avgMsg = TotalNoMsgs/numOfCSRequests;
+		float avgMsg = (float)TotalNoMsgs/numOfCSRequests;
+		float avgTime = (float)TotalTime/numOfCSRequests;
+		printf("TotalNum of Msgs:%ld, TotalTime: %ld\n",TotalNoMsgs,TotalTime);
 		printf("Average Number of Messages used: %.3f, tested on %d requests\n",avgMsg,numOfCSRequests);
-	
+		printf("Average Time Taken for each Request: %.3f, tested on %d requests\n",avgTime,numOfCSRequests);
+
+	printf("Bye!!!\n");
 }
-/*
+
 int main()
 {
 

@@ -206,6 +206,9 @@ void Starter::Algorithm2(){
 }
 
 void endProcessing(int id, long messageCounter,long timeCounter){
+	printf("Ending...\nID:%d, MessageCount:%ld, TimeCount:%ld",id,messageCounter,timeCounter);
+
+	sleep(3);
 	communication com;
 	char cIP[MAXLENGTH_IP_ADDR]=CONTROLLER_IP;
 	int sockFd=com.connectToServer(cIP,LISTEN_PORT_END);
@@ -218,6 +221,8 @@ void endProcessing(int id, long messageCounter,long timeCounter){
 
 	shutdown(sockFd,0);
 	close(sockFd);
+	printf("Bye!!!");
+	exit(0);
 }
 
 void *TorumListen(void* mqueue) {
@@ -293,6 +298,7 @@ void *TorumProcess(void* mqueue) {
 		}
 		else if(item->TYPE == END_PROCESS)
 		{
+			printf("END_PROCESS recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			endProcessing(node->ID,messageCounter,timeCounter);
 		}
 		delete item;

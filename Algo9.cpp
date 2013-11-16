@@ -58,6 +58,7 @@ bool Torum::requestCS(){
 			com.sendMessageToID(request,quorum[ID][i]);
 		}
 	}else{
+		if(HOLDER != ID)
 		queue->add(request);
 		com.sendMessageToID(request,HOLDER);
 	}
@@ -71,14 +72,20 @@ printf("in receive Request, request from %d\n",request.ORIGIN);
 	// token is not with this node
 		//request from its master(within quorum request)
 		if(request.ORIGIN == request.sender){
+
+			//if(request.ORIGIN != ID && HOLDER != ID){//cos we already added request from yourself in requestCS() method
 			//pthread_mutex_lock(&sharedQLock);
 			queue->add(request);
 			//pthread_mutex_unlock(&sharedQLock);
+			//}
 			if(HOLDER == ID){
 				if(!inCS){// Node is idle after completing CS.
 					Packet top = queue->top();
-
-					sendToken();
+					if(top.ORIGIN == ID){
+						queue->remove(top.ORIGIN);
+						EnterTheCS();
+					}else
+						sendToken();
 				}
 			}
 			if(HOLDER != -1){
@@ -193,6 +200,7 @@ bool Torum::sendToken(){
 			queue->updateTorumQ(quorum,quorumsize,ID);
 			//pthread_mutex_unlock(&sharedQLock);
 		}
+	HOLDER = -1;
 	struct Packet token;
 		token.TYPE = SEND_TOKEN;
 		token.ORIGIN = ID;
@@ -218,14 +226,14 @@ bool Torum::EnterTheCS(){
 	printf("\n******Node '%d' in CRITICAL SECTION******\n",ID);
 	string str ="";
 	char buff[4095];
-	sprintf(buff,"Node %d entered CS, Seq: %d \n",ID,sequenceNo);
-	writeToFile("CS.log","");
+	sprintf(buff,"Node %d entered CS, Seq: %ld \n",ID,sequenceNo);
+	writeToFile("Resource.txt",buff);
 	sleep(1);
 	inCS = false;
 }
 
 void Torum::displayStatus(){
-	printf("NODE STATUS: Seq=%d, Holder=%d, Queue Size=%d\n",sequenceNo,HOLDER,queue->size());
+	printf("NODE STATUS: ID:%d, Seq=%d, Holder=%d, Queue Size=%d\n",ID,sequenceNo,HOLDER,queue->size());
 }
 
 
