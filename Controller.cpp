@@ -217,7 +217,6 @@ void Controller::decideAlgorithm(){
 void Controller::Algorithm1(){
 	printf("\nYou have chosen Maekawa Distributed Mutual Exclusion Algorithm\n");
 }
-
 void Controller::Algorithm2(){
 	printf("\nYou have chosen Token and Quorum Based Mutual Exclusion Algorithm: Torum\n");
 	sendTokenToNode();
@@ -246,8 +245,8 @@ void createCSFile(){
 		  }
 		  else cout << "Unable to open file";
 }
-
 void Controller::sendCSrequests(int node){
+	numOfCSRequests++;
 	Packet pack1;
 	pack1.TYPE = MAKE_REQUEST;
 	pack1.ORIGIN = CONTROLLER_ID;
@@ -261,6 +260,9 @@ void Controller::sendCSrequests(int node){
 	com.sendMessage(pack1,desIP,LISTEN_PORT3);
 }
 void Controller::initiate(Controller *c){
+	numOfCSRequests = 0;
+	TotalNoMsgs = 0;
+	TotalTime = 0;
 	pthread_t listen;
 	pthread_create(&listen, NULL,listener,(void*)c );
 	pthread_join(listen,NULL);
@@ -269,18 +271,80 @@ void Controller::initiate(Controller *c){
 
 void Controller::endProcess()
 {
+	int TotalNoMsgs = 0;
+	int TotalTime = 0;
 	printf("End of Algorithm!!\n Calculating the statistics . . .\n");
-	communication com;
-	int server;
-	int clientFd=com.OpenListener(server,LISTEN_PORT_END);
-	int messageCounter;
-	com.readFromSocket(clientFd,&messageCounter,sizeof(int));
-	
-	shutdown(clientFd,2);
-	close(clientFd);
-	close(server);
+	int counter=0;
+		int servSock;                    /* Socket descriptor for server */
+		int clntSock;                    /* Socket descriptor for client */
+		struct sockaddr_in echoServAddr; /* Local address */
+		struct sockaddr_in echoClntAddr; /* Client address */
+		unsigned short echoServPort;     /* Server port */
+		socklen_t clntLen;            /* Length of client address data structure */
+
+
+		echoServPort = LISTEN_PORT;  /* First arg:  local port */
+
+		/* Create socket for incoming connections */
+		if ((servSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+			DieWithError1("socket() failed");
+
+		/* Construct local address structure */
+		memset(&echoServAddr, 0, sizeof(echoServAddr));   /* Zero out structure */
+		echoServAddr.sin_family = AF_INET;                /* Internet address family */
+		echoServAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+		echoServAddr.sin_port = htons(echoServPort);      /* Local port */
+
+		/* Bind to the local address */
+		if (bind(servSock, (struct sockaddr *) &echoServAddr, sizeof(echoServAddr)) < 0)
+			DieWithError1("bind() failed");
+
+		/* Mark the socket so it will listen for incoming connections */
+		if (listen(servSock, MAXPENDING) < 0)
+			DieWithError1("listen() failed");
+
+		for(int n=0;n<MAXNODES;n++){
+			/* Set the size of the in-out parameter */
+			clntLen = sizeof(echoClntAddr);
+			/* Wait for a client to connect */
+			if ((clntSock = accept(servSock, (struct sockaddr *) &echoClntAddr,&clntLen)) < 0)
+			{
+				close(servSock);
+				DieWithError1("accept() failed");
+			}
+
+			/* clntSock is connected to a client! */
+			char *client_ip = inet_ntoa(echoClntAddr.sin_addr);
+			printf("\nClient socket %d, addlen : %d %s\n",clntSock,sizeof(client_ip),client_ip);
+
+			communication com;
+			int id = -1;
+			com.readFromSocket(clntSock,&id,sizeof(int));
+			long msgc;
+			com.readFromSocket(clntSock,&msgc,sizeof(long));
+			TotalNoMsgs +=msgc;
+			long time;
+			com.readFromSocket(clntSock,&time,sizeof(long));
+			TotalTime +=time;
+
+			shutdown(clntSock,0);
+					int k = close(clntSock);
+					if (k < 0) {
+							printf("\nError in Closing");
+							exit(0);
+					}
+		}
+		shutdown(servSock,2);
+			int k = close(servSock);
+			if (k < 0) {
+				printf("\nError in Closing");
+				exit(0);
+			}
+		float avgMsg = TotalNoMsgs/numOfCSRequests;
+		printf("Average Number of Messages used: %.3f, tested on %d requests\n",avgMsg,numOfCSRequests);
 	
 }
+/*
 int main()
 {
 

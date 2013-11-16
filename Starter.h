@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 #include <pthread.h>
+#include <queue>
 #include <sys/time.h>
 #include <unistd.h>
 #include "Algo9.h"
@@ -25,13 +26,14 @@ private:
 	int quorumSize;
 	int NumNodes;
 	int **Quorum;
-	int id;
+
 	char **mapIDtoIP;
 	char CS_FILENAME[25];
 	void parseMsg(const string& s,const string& delim,std::vector<string>& tokens);
 	
 public:
-	static int messageCounter=0;
+	int id;
+
 	struct timeval start, end;
 	Starter();
 	virtual ~Starter();
@@ -40,7 +42,7 @@ public:
 	void decideAlgorithm();
 	void Algorithm1();
 	void Algorithm2();
-	void processing();
+
 };
 
 #endif /* STARTER_H_ */

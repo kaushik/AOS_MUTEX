@@ -13,7 +13,7 @@
 class Torum
 {
 protected:
-	int ID;
+
 	long sequenceNo;
 	int HOLDER;
 	int **quorum;
@@ -27,15 +27,19 @@ protected:
 
 
 public:
+	int ID;
 	communication com;
+	int flagforCS;
 	char CS_FILENAME[25];
+
 	static Torum* getInstance();
 	void init();
 	bool setID(int id);
+	int getID();
 	bool getQuorumTable(int **quorumtable,int qsize,int nnodes);
 	bool requestCS();
 	bool receiveRequest(Packet request);
-	bool receiveToken(Packet request);
+	int receiveToken(Packet request);
 	bool receiveRelease(Packet request);
 	bool receiveHaveTkn(Packet request);
 	bool sendToken();

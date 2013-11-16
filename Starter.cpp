@@ -2,7 +2,9 @@
 
 Starter::Starter() {
 	printf("In Starter\n");
-	
+	id=-1;
+	quorumSize=0;
+	NumNodes=0;
 	//decideAlgorithm();
 }
 
@@ -188,15 +190,14 @@ void Starter::Algorithm2(){
 	node->com.setMapIDtoIP(mapIDtoIP);
 	strcpy(node->CS_FILENAME,CS_FILENAME);
 
-
-	wqueue<Packet*> queue;
+	wqueue<Packet*> mqueue;
 
 	pthread_t ListenerThread;
-	pthread_create(&ListenerThread, NULL, TorumListen, (void *)&queue);
+	pthread_create(&ListenerThread, NULL, TorumListen, (void *)&mqueue);
 
 	sleep(1);
 	pthread_t ProcessingThread;
-	pthread_create(&ProcessingThread, NULL, TorumProcess,(void *)&queue);
+	pthread_create(&ProcessingThread, NULL, TorumProcess,(void *)&mqueue);
 
 	pthread_join(ListenerThread, NULL);
 	pthread_join(ProcessingThread, NULL);
@@ -204,18 +205,41 @@ void Starter::Algorithm2(){
 	printf("Torum execution done\n");
 }
 
-void *TorumListen(void* queue) {
+void endProcessing(int id, long messageCounter,long timeCounter){
+	communication com;
+	char cIP[MAXLENGTH_IP_ADDR]=CONTROLLER_IP;
+	int sockFd=com.connectToServer(cIP,LISTEN_PORT_END);
+	int nodeid = id;
+	com.writeToSocket(sockFd,&nodeid,sizeof(int));
+	long counter=messageCounter;
+	com.writeToSocket(sockFd,&counter,sizeof(long));
+	counter = timeCounter;
+	com.writeToSocket(sockFd,&counter,sizeof(long));
+
+	shutdown(sockFd,0);
+	close(sockFd);
+}
+
+void *TorumListen(void* mqueue) {
 	printf("TorumListener Thread created\n");
-	wqueue<Packet*> *m_queue=((wqueue<Packet*>*)queue);
+	wqueue<Packet*> *m_queue=((wqueue<Packet*>*)mqueue);
 	communication com;
 	com.serverListen(LISTEN_PORT3,m_queue);
 	return NULL;
 }
 
 
-void *TorumProcess(void* queue) {
+void *TorumProcess(void* mqueue) {
 	printf("TorumProcess Thread created\n");
-	wqueue<Packet*>*m_queue=(wqueue<Packet*>*)queue;
+	long messageCounter = 0;
+	long timeCounter = 0;
+	wqueue<Packet*>*m_queue=(wqueue<Packet*>*)mqueue;
+
+	//getting time for CS grant
+	long utime, seconds, useconds;
+	queue<struct timeval> timequeue;
+
+
 	Torum *node = Torum::getInstance();
 	sleep(5);
 	// Remove 1 item at a time and process it. Blocks if no items are
@@ -229,40 +253,51 @@ void *TorumProcess(void* queue) {
 
 		if (item->TYPE == SEND_TOKEN){
 			printf("SEND_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			node->flagforCS = false;
 			node->receiveToken(*item);
+			if(node->flagforCS){//node entered CS using this Token
+				struct timeval end;
+				gettimeofday(&end, NULL);
+				struct timeval start = timequeue.front();
+				timequeue.pop();
+				seconds  = end.tv_sec  - start.tv_sec;
+				useconds = end.tv_usec - start.tv_usec;
+				utime = ((seconds) * 1000000 + useconds) + 0.5;
+				timeCounter += utime;
+			}
 			if(item->sender != node->ID)
-			Starter::messageCounter++;
+			messageCounter++;
 		}else if (item->TYPE == MAKE_REQUEST){
 			printf("MAKE_REQUEST recieved from Controller %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+
+			struct timeval start;
+			gettimeofday(&start, NULL);
+			timequeue.push(start);
+
 			node->requestCS();
 		}else if (item->TYPE == HAVE_TOKEN){
 			if(item->sender != node->ID)
-						Starter::messageCounter++;
+						messageCounter++;
 			printf("HAVE_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveHaveTkn(*item);
 		}else if (item->TYPE == RELEASE){
 			if(item->sender != node->ID)
-						Starter::messageCounter++;
+						messageCounter++;
 			printf("RELEASE recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveRelease(*item);
 		}else if (item->TYPE == REQUEST){
 			if(item->sender != node->ID)
-						Starter::messageCounter++;
+						messageCounter++;
 			printf("REQUEST recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->receiveRequest(*item);
 		}
 		else if(item->TYPE == END_PROCESS)
 		{
-			communication com;
-			char cIP[MAXLENGTH_IP_ADDR]=CONTROLLER_IP;
-			int sockFd=com.connectToServer(cIP,LISTEN_PORT_END);
-			int counter=Starter::messageCounter;
-			com.writeToSocket(sockFd,&counter,sizeof(int));
-			
-			shutdown(sockFd,0);
-			close(sockFd);
+			endProcessing(node->ID,messageCounter,timeCounter);
 		}
 		delete item;
 	}
 	return NULL;
 }
+
+

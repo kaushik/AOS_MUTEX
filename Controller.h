@@ -23,8 +23,9 @@ class Controller
 {
 private:
 	int Algorithm;
-	int numOfCS;
-	int numOfMsg;
+	int numOfCSRequests;
+	long TotalNoMsgs;
+	long TotalTime;
 
 public:
 
@@ -41,5 +42,6 @@ public:
 	void sendTokenToNode();
 	void UserInput();
 	void sendCSrequests(int node);
+	void endProcess();
 };
 

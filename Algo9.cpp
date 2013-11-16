@@ -28,6 +28,9 @@ bool Torum::setID(int id){
 	ID = id;
 	return true;
 }
+int Torum::getID(){
+	return ID;
+}
 bool Torum::getQuorumTable(int **quorumtable,int qsize,int Nnodes){
 	quorum = quorumtable;
 	quorumsize = qsize;
@@ -100,7 +103,11 @@ printf("in receive Request, request from %d\n",request.ORIGIN);
 	return true;
 }
 
-bool Torum::receiveToken(Packet token){
+/*
+ * return >0 if successful
+ * 1 if entered CS here
+ */
+int Torum::receiveToken(Packet token){
 	if(sequenceNo<token.SEQ) sequenceNo = token.SEQ;
 	//pthread_mutex_lock(&sharedQLock);
 	Packet top = queue->top();
@@ -207,6 +214,7 @@ void writeToFile(string filename,string line){
 }
 bool Torum::EnterTheCS(){
 	inCS = true;
+	flagforCS =true;
 	printf("\n******Node '%d' in CRITICAL SECTION******\n",ID);
 	string str ="";
 	char buff[4095];
