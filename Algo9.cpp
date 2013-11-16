@@ -87,8 +87,7 @@ printf("in receive Request, request from %d\n",request.ORIGIN);
 					}else
 						sendToken();
 				}
-			}
-			if(HOLDER != -1){
+			}else if(HOLDER != -1){
 				request.sender=ID;
 				com.sendMessageToID(request,HOLDER);
 			}

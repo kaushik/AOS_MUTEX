@@ -231,8 +231,10 @@ void Controller::UserInput(){
 		int id=0;
 		printf("enter id to send request for CS\n");
 		cin>>id;
-		if(id == 999)
+		if(id == 999){
 			endProcess();
+			return;
+		}
 		else
 			sendCSrequests(id);
 	}
