@@ -229,11 +229,28 @@ void Controller::UserInput(){
 	printf("");
 	for(int i=0;;i++){
 		int id=0;
-		printf("enter id to send request for CS\n");
+		printf("Enter id to send request for CS\n Enter 50 to send simultaneous request:\n ");
 		cin>>id;
 		if(id == 999){
 			endProcess();
 			return;
+		}
+		if(id == 50)
+		{
+			int num=0;
+			printf("Enter the number of simultaneous requests:\n");
+			cin>>num;
+			printf("Enter the id:\n");
+			for(int i=0;i<num;i++)
+			{
+				int nID=9999;
+				printf("Enter the id:\n");
+				cin>>nID;
+				sendCSrequests(id);
+				
+			}
+			
+			
 		}
 		else
 			sendCSrequests(id);
@@ -384,4 +401,4 @@ int main()
 	printf("end of controller\n");
 		return 0;
 }
-/**/
+
