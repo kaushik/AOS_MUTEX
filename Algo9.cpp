@@ -210,7 +210,7 @@ bool Torum::sendToken(){
 	}
 }
 
-void writeToFile(string filename,string line){
+void Torum::writeToFile(string filename,string line){
 	ofstream myfile (filename.c_str(),ios::out | ios::app);
 	  if (myfile.is_open())
 	  {

@@ -30,6 +30,7 @@ public:
 	int size();
 	bool isEmpty();
 	bool updateTorumQ(int **quorum,int qsize,int ID);
+	bool equalsTo(Packet m1, Packet m2);
 };
 
 class BlockingQueue{

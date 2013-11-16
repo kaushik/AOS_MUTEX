@@ -178,6 +178,25 @@ void Starter::decideAlgorithm(){
 
 void Starter::Algorithm1(){
 	printf("Starting Algorithm 1: Maekawa\n");
+	mnode = MaekawaAlgorithm::getInstance();
+	mnode->initialization();
+	mnode->setProcessID(id);
+	mnode->getQuorumTable(Quorum,quorumSize, NumNodes);
+
+	mnode->com.setMapIDtoIP(mapIDtoIP);
+
+	wqueue<Packet*> queue;
+	pthread_t ListenerThread;
+	pthread_create(&ListenerThread, NULL, MaekawaListen, (void *)&queue);
+
+	sleep(1);
+	pthread_t ProcessingThread;
+	pthread_create(&ProcessingThread, NULL, MaekawaProcess,(void *)&queue);
+
+	pthread_join(ListenerThread, NULL);
+	pthread_join(ProcessingThread, NULL);
+
+	printf("Maekawa Algorithm execution done\n");
 }
 
 void Starter::Algorithm2(){
@@ -259,7 +278,9 @@ void *TorumProcess(void* mqueue) {
 		if (item->TYPE == SEND_TOKEN){
 			printf("SEND_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 			node->flagforCS = false;
+
 			node->receiveToken(*item);
+
 			if(node->flagforCS){//node entered CS using this Token
 				struct timeval end;
 				gettimeofday(&end, NULL);
@@ -306,4 +327,97 @@ void *TorumProcess(void* mqueue) {
 	return NULL;
 }
 
+void *MaekawaListen(void* iqueue) {
+	printf("MaekawaListener Thread created\n");
+	wqueue<Packet*> *m_queue=((wqueue<Packet*>*)iqueue);
+	communication com;
+	com.serverListen(LISTEN_PORT3,m_queue);
+	return NULL;
+}
+
+
+void *MaekawaProcess(void* iqueue) {
+	printf("MaekawaProcess Thread created\n");
+
+	long messageCounter = 0;
+	long timeCounter = 0;
+	//getting time for CS grant
+	long utime, seconds, useconds;
+	queue<struct timeval> timequeue;
+
+	wqueue<Packet*>*m_queue=(wqueue<Packet*>*)iqueue;
+	MaekawaAlgorithm *mnode = MaekawaAlgorithm::getInstance();
+	sleep(5);
+	// Remove 1 item at a time and process it. Blocks if no items are
+	// available to process.
+	for (int i = 0;; i++) {
+		printf("MaekawaProcessing Thread , loop %d - waiting for item...\n", i);
+		Packet* item = m_queue->remove();
+		//printf("thread  loop %d - got one item\n", i);
+		printf("Received: messageType - %d, SEQ number - %ld\n",item->TYPE, item->SEQ);
+
+        switch (item->TYPE) {
+            case MAKE_REQUEST:
+                printf(" ## MAKE_REQUEST received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                struct timeval start;
+                gettimeofday(&start, NULL);
+                timequeue.push(start);
+                mnode->receiveMakeRequest(*item);
+
+                break;
+            case REQUEST:
+                printf(" ## REQUEST received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->receiveRequest(*item);
+                if(item->ORIGIN != mnode->processID)
+                	messageCounter++;
+                break;
+            case INQUIRE:
+                printf(" ## INQUIRE received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->receiveInquire(*item);
+                if(item->ORIGIN != mnode->processID)
+                    messageCounter++;
+                break;
+            case FAILED:
+                printf(" ## FAILED received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->receiveFailed(*item);
+                if(item->ORIGIN != mnode->processID)
+                    messageCounter++;
+                break;
+            case RELEASE:
+                printf(" ## RELEASE received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->receiveRelease(*item);
+                if(item->ORIGIN != mnode->processID)
+                    messageCounter++;
+                break;
+            case RELINQUISH:
+                printf(" ## RELINQUISH received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->receiveRelinquish(*item);
+                if(item->ORIGIN != mnode->processID)
+                    messageCounter++;
+                break;
+            case LOCKED:
+                printf(" ## LOCKED received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+                mnode->flagforCS = false;
+                mnode->receiveLocked(*item);
+                if(mnode->flagforCS){//node entered CS using this Token
+					struct timeval end;
+					gettimeofday(&end, NULL);
+					struct timeval start = timequeue.front();
+					timequeue.pop();
+					seconds  = end.tv_sec  - start.tv_sec;
+					useconds = end.tv_usec - start.tv_usec;
+					utime = ((seconds) * 1000000 + useconds) + 0.5;
+					timeCounter += utime;
+				}
+				if(item->ORIGIN != mnode->processID)
+				messageCounter++;
+                break;
+
+            default:
+                break;
+        }
+        delete item;
+	}
+	return NULL;
+}
 

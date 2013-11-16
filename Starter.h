@@ -17,12 +17,14 @@
 #include <unistd.h>
 #include "Algo9.h"
 #include "communication.h"
+#include "MaekawaAlgorithm.h"
 
 using namespace std;
 
 class Starter {
 private:
 	Torum *node;
+	MaekawaAlgorithm *mnode;
 	int quorumSize;
 	int NumNodes;
 	int **Quorum;
@@ -44,5 +46,10 @@ public:
 	void Algorithm2();
 
 };
+
+void *TorumListen(void* queue);
+void *TorumProcess(void* queue);
+void *MaekawaListen(void* queue);
+void *MaekawaProcess(void* queue);
 
 #endif /* STARTER_H_ */

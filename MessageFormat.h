@@ -7,6 +7,12 @@
 #define HAVE_TOKEN 1
 #define RELEASE 2
 #define SEND_TOKEN 3
+
+#define LOCKED 4
+#define FAILED 5
+#define INQUIRE 6
+#define RELINQUISH 7
+
 #define MAKE_REQUEST 11
 #define END_PROCESS 12
 

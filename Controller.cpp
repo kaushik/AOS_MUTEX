@@ -236,6 +236,7 @@ void Controller::decideAlgorithm(){
 
 void Controller::Algorithm1(){
 	printf("\nYou have chosen Maekawa Distributed Mutual Exclusion Algorithm\n");
+	UserInput();
 }
 void Controller::Algorithm2(){
 	printf("\nYou have chosen Token and Quorum Based Mutual Exclusion Algorithm: Torum\n");
@@ -256,7 +257,12 @@ void Controller::UserInput(){
 			
 			for( vector<string>::const_iterator i = x.begin(); i != x.end(); ++i)
 			{
+
 				int k=atoi((*i).c_str());
+				if(k == 999){
+							endProcess();
+							return;
+						}
 			    cout << k << ' '<<'\n';
 			    sendCSrequests(k);
 			    

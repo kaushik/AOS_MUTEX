@@ -52,6 +52,7 @@ private:
 	Torum& operator=(Torum const& copy){};
 	static Torum* instance;
 	bool EnterTheCS();
+	void writeToFile(string filename,string line);
 };
 
 #endif;
