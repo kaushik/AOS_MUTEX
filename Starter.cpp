@@ -412,7 +412,11 @@ void *MaekawaProcess(void* iqueue) {
 				if(item->ORIGIN != mnode->processID)
 				messageCounter++;
                 break;
-
+            case END_PROCESS:
+            	printf("END_PROCESS recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+            	delete item;
+            	endProcessing(mnode->processID,messageCounter,timeCounter);
+            	break;
             default:
                 break;
         }
