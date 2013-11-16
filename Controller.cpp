@@ -1,5 +1,8 @@
 #include "Controller.h"
-#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include<iostream>
 using namespace std;
 
 
@@ -31,6 +34,23 @@ Controller::~Controller(void)
 {
 	//delete QuorumTable;
 }
+
+vector<string> &split(const string &s, char delim, vector<string> &elems) {
+    stringstream ss(s);
+    string item;
+    while (getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+vector<string> split(const string &s, char delim) {
+    vector<string> elems;
+    split(s, delim, elems);
+    return elems;
+}
+
 
 void DieWithError1(char* errorMessage)
 {
@@ -229,8 +249,20 @@ void Controller::UserInput(){
 	printf("");
 	for(int i=0;;i++){
 		int id=0;
-		printf("Enter id to send request for CS\n Enter 50 to send simultaneous request:\n ");
-		cin>>id;
+		string input;
+		printf("Enter id to send request for CS (Use ':' to send the simultaneous requests )\n");
+		cin>>input;
+		vector<string> x = split(input, ':');
+			
+			for( vector<string>::const_iterator i = x.begin(); i != x.end(); ++i)
+			{
+				int k=atoi((*i).c_str());
+			    cout << k << ' '<<'\n';
+			    sendCSrequests(k);
+			    
+			}
+		
+		/*cin>>id;
 		if(id == 999){
 			endProcess();
 			return;
@@ -253,7 +285,7 @@ void Controller::UserInput(){
 			
 		}
 		else
-			sendCSrequests(id);
+			sendCSrequests(id);*/
 	}
 }
 
@@ -388,6 +420,9 @@ void Controller::endProcess()
 
 	printf("Bye!!!\n");
 }
+
+
+
 
 int main()
 {
