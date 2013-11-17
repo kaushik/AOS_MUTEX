@@ -34,6 +34,26 @@ Packet LexiQueue::remove(int origin){
 	return ret;
 }
 
+Packet LexiQueue::remove(int origin, long seq){
+	tempq = pq;
+	Packet top;
+	Packet ret;
+	ret.TYPE = -1;
+	while(!tempq.empty())
+		tempq.pop();
+	while(!pq.empty()){
+		top = pq.top();
+		pq.pop();
+		if(top.ORIGIN == origin && top.SEQ == seq){
+			ret =top;
+		}else
+			tempq.push(top);
+	}
+	pq = tempq;
+
+	return ret;
+}
+
 Packet LexiQueue::top(){
 	Packet top;
 	top.TYPE = -1;

@@ -58,52 +58,78 @@ bool Torum::requestCS(){
 			com.sendMessageToID(request,quorum[ID][i]);
 		}
 	}else{
-		if(HOLDER != ID)
 		queue->add(request);
-		com.sendMessageToID(request,HOLDER);
+		if(HOLDER != ID){
+			com.sendMessageToID(request,HOLDER);
+		}else if(HOLDER == ID){
+			Packet top = queue->top();
+			if(top.ORIGIN == ID){
+				queue->remove(top.ORIGIN);
+				EnterTheCS();
+			}else{//if there is another nodes req on top of queue
+				for(int i=0;i<quorumsize;i++){
+					if(ID !=i)
+						com.sendMessageToID(request,quorum[ID][i]);
+				}
+				sendToken();
+			}
+		}
 	}
 	return true;
 }
-
+bool Torum::isMaster(int master,int slave){
+	bool ret = false;
+	for(int i =0;i<quorumsize;i++){
+		if(quorum[master][i] == slave){
+			ret = true;
+		}
+	}
+	return ret;
+}
 bool Torum::receiveRequest(Packet request){
-printf("in receive Request, request from %d\n",request.ORIGIN);
+printf("request from %d, sender:%d, seq:%d\n",request.ORIGIN,request.sender,request.SEQ);
 	if(sequenceNo<request.SEQ) sequenceNo = request.SEQ;
 	//check if the token is with this node
 	// token is not with this node
-		//request from its master(within quorum request)
-		if(request.ORIGIN == request.sender){
+	//request from its master(within quorum request)
+	if(request.ORIGIN == request.sender && isMaster(request.sender,ID)){
 
-			//if(request.ORIGIN != ID && HOLDER != ID){//cos we already added request from yourself in requestCS() method
-			//pthread_mutex_lock(&sharedQLock);
-			queue->add(request);
-			//pthread_mutex_unlock(&sharedQLock);
-			//}
-			if(HOLDER == ID){
+		//if(request.ORIGIN != ID && HOLDER != ID){//cos we already added request from yourself in requestCS() method
+		//pthread_mutex_lock(&sharedQLock);
+		queue->add(request);
+		//pthread_mutex_unlock(&sharedQLock);
+		//}
+		if(HOLDER == ID){
+			if(!inCS){// Node is idle after completing CS.
+				Packet top = queue->top();
+				if(top.ORIGIN == ID){
+					queue->remove(top.ORIGIN);
+					EnterTheCS();
+				}else{
+					for(int i=0;i<quorumsize;i++){
+						if(ID !=i)
+							com.sendMessageToID(request,quorum[ID][i]);
+					}
+					sendToken();
+				}
+			}
+		}else if(HOLDER != -1){
+			request.sender=ID;
+			com.sendMessageToID(request,HOLDER);
+		}
+	}else{// request originated from out of this quorum
+		if(HOLDER==ID){
+				//pthread_mutex_lock(&sharedQLock);
+				queue->add(request);
+				//pthread_mutex_unlock(&sharedQLock);
 				if(!inCS){// Node is idle after completing CS.
 					Packet top = queue->top();
-					if(top.ORIGIN == ID){
-						queue->remove(top.ORIGIN);
-						EnterTheCS();
-					}else
+					if(top.TYPE !=-1)
 						sendToken();
 				}
-			}else if(HOLDER != -1){
-				request.sender=ID;
-				com.sendMessageToID(request,HOLDER);
 			}
-		}else{// request originated from out of this quorum
-			if(HOLDER==ID){
-					//pthread_mutex_lock(&sharedQLock);
-					queue->add(request);
-					//pthread_mutex_unlock(&sharedQLock);
-					if(!inCS){// Node is idle after completing CS.
-						Packet top = queue->top();
-						if(top.TYPE !=-1)
-							sendToken();
-					}
-				}
-			//else drop the request
-		}
+		//else drop the request
+	}
 
 
 	return true;
@@ -117,8 +143,18 @@ int Torum::receiveToken(Packet token){
 	if(sequenceNo<token.SEQ) sequenceNo = token.SEQ;
 	//pthread_mutex_lock(&sharedQLock);
 	Packet top = queue->top();
-	if(top.TYPE == -1){
+	if(top.TYPE == -1){//if queue empty just keep the token with you
 		printf("receiveToken: queue top returned empty\n");
+		HOLDER = ID;
+		struct Packet havetkn;
+		havetkn.TYPE = HAVE_TOKEN;
+		havetkn.ORIGIN = ID;
+		havetkn.sender = ID;
+		havetkn.SEQ = sequenceNo;
+		for(int i=0;i<quorumsize;i++){
+			if(ID!=i)
+				com.sendMessageToID(havetkn,quorum[ID][i]);
+		}
 	}
 	//pthread_mutex_unlock(&sharedQLock);
 
@@ -132,13 +168,41 @@ int Torum::receiveToken(Packet token){
 		for(int i=0;i<quorumsize;i++){
 			com.sendMessageToID(havetkn,quorum[ID][i]);
 		}
+		if(token.ORIGIN == CONTROLLER_ID){
+			HOLDER = ID;
+		}
 		if(ID == top.ORIGIN){
 			EnterTheCS();
 		}
 	}else{
 		// sends token to the request on top of the queue
-		//Note: we are not passing the same packet that we received
-		sendToken();
+		//Note: we are passing the same packet that we received, just update sender variable
+		token.sender = ID;
+		com.sendMessageToID(token,top.sender);
+		//sendToken();
+	}
+	return true;
+}
+
+bool Torum::receiveHaveTkn(Packet havtkn){
+	if(sequenceNo<havtkn.SEQ) sequenceNo = havtkn.SEQ;
+	HOLDER = havtkn.ORIGIN;
+	//if the queue has request from the havetoken origin
+	//remove it as the origins request has been satisfied
+	Packet ret = queue->remove(havtkn.ORIGIN);
+	if(ret.TYPE == -1){
+		printf("receiveHaveTkn: queue remove returned empty/not found\n");
+	}
+	//now as we know the token holder, send the request
+	//waiting on top of our queue to holder
+
+	Packet top = queue->top();
+	//printf("in rechavtkn origin:%d %d\n",top.ORIGIN,top.TYPE);
+	if(top.TYPE == -1){
+		printf("receiveHaveToken: queue top returned empty\n");
+		return false;
+	}else{
+		com.sendMessageToID(top,HOLDER);
 	}
 	return true;
 }
@@ -146,47 +210,33 @@ int Torum::receiveToken(Packet token){
 bool Torum::receiveRelease(Packet release){
 	if(sequenceNo<release.SEQ) sequenceNo = release.SEQ;
 	HOLDER = -1;
-	//pthread_mutex_lock(&sharedQLock);
-	queue->updateTorumQ(quorum,quorumsize,ID);
-	//pthread_mutex_unlock(&sharedQLock);
-	return true;
-}
 
-bool Torum::receiveHaveTkn(Packet havtkn){
-	if(sequenceNo<havtkn.SEQ) sequenceNo = havtkn.SEQ;
-	HOLDER = havtkn.ORIGIN;
+
 	//pthread_mutex_lock(&sharedQLock);
-	Packet ret = queue->remove(havtkn.ORIGIN);
-	if(ret.TYPE != -1){
-	Packet top = queue->top();
-	if(top.TYPE == -1){
-			printf("receiveToken: queue top returned empty\n");
-					return false;
-		}
+	//queue->updateTorumQ(quorum,quorumsize,ID);
 	//pthread_mutex_unlock(&sharedQLock);
-	if(top.TYPE!=-1)
-		com.sendMessageToID(top,HOLDER);
 	return true;
-	}else{
-		printf("receiveHaveTkn: queue top returned empty/not found\n");
-		return false;
-	}
 }
 
 bool Torum::sendToken(){
+	printf("In sendToken(), ");
 	Packet top = queue->top();
 	if(top.TYPE == -1){
-			printf("sendToken: queue top returned empty\n");
+			printf("\nsendToken: queue top returned empty\n");
 					//return false;
-		}
-	Packet ret = queue->remove(top.ORIGIN);
-	if(ret.TYPE==-1){
-		printf("sendToken: queue remove returned empty/not found\n");
-		//return false;
-	}else{
+	}else{//if queue not empty
+		printf("top of queue is Origin:%d, Sender:%d\n",top.ORIGIN,top.sender);
 		if(HOLDER == ID){
-		//token was with you and you are granting it to some one else
+		//token is with you and you are granting it to some one else
 		//Release is sent only by such nodes and not arbitrators of Token
+
+			//first remove the request from he queue and then
+			//send token to its origin
+			Packet ret = queue->remove(top.ORIGIN);
+				if(ret.TYPE==-1){
+					printf("sendToken: queue remove returned empty/not found\n");
+					//return false;
+				}
 			struct Packet release;
 			release.TYPE = RELEASE;
 			release.ORIGIN = ID;
@@ -222,11 +272,11 @@ void Torum::writeToFile(string filename,string line){
 bool Torum::EnterTheCS(){
 	inCS = true;
 	flagforCS =true;
-	printf("\n******Node '%d' in CRITICAL SECTION******\n",ID);
-	string str ="";
+	//sleep(2);
+	printf("\n******Node '%d' in CRITICAL SECTION******\n\n",ID);
 	char buff[4095];
 	sprintf(buff,"Node %d entered CS, Seq: %ld \n",ID,sequenceNo);
-	writeToFile("Resource.txt",buff);
+	writeToFile(CS_FILENAME,buff);
 	sleep(1);
 	inCS = false;
 }

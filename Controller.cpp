@@ -9,7 +9,7 @@ using namespace std;
 
 
 //Msg type=100
-Controller::Controller(void):QuorumTable{{0,1,2},{1,3,5},{2,4,5},{0,3,4},{1,4,6},{0,5,6},{2,3,6}/*{0, 1, 2, 3, 4, 8, 12},
+Controller::Controller(void):QuorumTable{{0,1},{1,2},{0,2}/*{0,1,2},{1,3,5},{2,4,5},{0,3,4},{1,4,6},{0,5,6},{2,3,6}/*{0, 1, 2, 3, 4, 8, 12},
 		{0, 1, 2, 3, 5, 9, 13},
 		{0, 1, 2, 3, 6, 10, 14},
 		{0, 1, 2, 3, 7, 11, 15},
@@ -203,7 +203,7 @@ void Controller::decideAlgorithm(){
 
 	communication con;
 	for(int i=0;i<MAXNODES;i++){
-		printf("mapIP:%s\n",mapIPtoID[i]);
+		printf("mapIP:%s -->",mapIPtoID[i]);
 		int sockfd = con.connectToServer(mapIPtoID[i],LISTEN_PORT2);
 
 		con.writeToSocket(sockfd,&Algorithm,sizeof(int));
@@ -215,7 +215,7 @@ void Controller::decideAlgorithm(){
 			strToSend += ":";
 			tempStr.clear();
 		}
-		printf("strtosend: %s",strToSend.c_str());
+		printf("strtosend: %s\n",strToSend.c_str());
 		con.writeToSocket(sockfd,const_cast<char*> (strToSend.c_str()),4095);
 		char *csfilename=CS_FILENAME;
 		con.writeToSocket(sockfd,csfilename,25);
@@ -263,8 +263,10 @@ void Controller::UserInput(){
 							endProcess();
 							return;
 						}
-			    cout << k << ' '<<'\n';
-			    sendCSrequests(k);
+				else if(k < MAXNODES)
+					sendCSrequests(k);
+				else
+					printf("Invalid input %d\n",k);
 			    
 			}
 		

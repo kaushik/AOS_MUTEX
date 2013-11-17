@@ -417,11 +417,11 @@ void MaekawaAlgorithm::writeToFile(string filename,string line){
 }
 
 void MaekawaAlgorithm::enterCriticalSection(){
-	printf("\n******Node '%d' in CRITICAL SECTION******\n",processID);
+	printf("\n\n******Node '%d' in CRITICAL SECTION******\n",processID);
 	flagforCS =true;
     char buff[4095];
 	sprintf(buff,"Node %d entered CS, Seq: %ld \n",processID,sequenceNo);
-	writeToFile("Resource.txt",buff);
+	writeToFile(CS_FILENAME,buff);
 
     //sleep(15);
     hasCompletedCriticalSection = true;

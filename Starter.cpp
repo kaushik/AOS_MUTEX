@@ -160,8 +160,8 @@ void Starter::decideAlgorithm(){
 		strcpy(mapIDtoIP[i],recvdValues[i].c_str());
 		printf("%d\t%s\n",i,mapIDtoIP[i]);
 	}
-	com.readFromSocket(clifd,CS_FILENAME,25);
-	printf("File Name of Critical section resource is %s\n",CS_FILENAME);
+	com.readFromSocket(clifd,CS_FileName,25);
+	printf("File Name of Critical section resource is %s\n",CS_FileName);
 	shutdown(clifd,2);
 	com.closeSocket(clifd);
 	com.closeSocket(serfd);
@@ -207,7 +207,7 @@ void Starter::Algorithm2(){
 	node->getQuorumTable(Quorum,quorumSize,NumNodes);
 	//000
 	node->com.setMapIDtoIP(mapIDtoIP);
-	strcpy(node->CS_FILENAME,CS_FILENAME);
+	strcpy(node->CS_FILENAME,CS_FileName);
 
 	wqueue<Packet*> mqueue;
 
@@ -240,7 +240,7 @@ void endProcessing(int id, long messageCounter,long timeCounter){
 
 	shutdown(sockFd,0);
 	close(sockFd);
-	printf("Bye!!!");
+	printf("Bye!!!\n\n\n");
 	exit(0);
 }
 
@@ -266,17 +266,18 @@ void *TorumProcess(void* mqueue) {
 
 	Torum *node = Torum::getInstance();
 	sleep(5);
+	node->displayStatus();
 	// Remove 1 item at a time and process it. Blocks if no items are
 	// available to process.
 	for (int i = 0;; i++) {
-		node->displayStatus();
-		printf("TorumProcessing Thread , loop %d - waiting for item...\n", i);
+
+		printf("\nTorumProcessing Thread , loop %d - waiting for message...\n", i);
 		Packet* item = m_queue->remove();
 		//printf("thread  loop %d - got one item\n", i);
 		//printf("Received: messageType - %d, SEQ number - %ld\n",item->TYPE, item->SEQ);
 
 		if (item->TYPE == SEND_TOKEN){
-			printf("SEND_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##SEND_TOKEN recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			node->flagforCS = false;
 
 			node->receiveToken(*item);
@@ -294,7 +295,7 @@ void *TorumProcess(void* mqueue) {
 			if(item->sender != node->ID)
 			messageCounter++;
 		}else if (item->TYPE == MAKE_REQUEST){
-			printf("MAKE_REQUEST recieved from Controller %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##MAKE_REQUEST recieved from Controller %d and packet type is %d\n",item->ORIGIN,item->TYPE);
 
 			struct timeval start;
 			gettimeofday(&start, NULL);
@@ -304,25 +305,26 @@ void *TorumProcess(void* mqueue) {
 		}else if (item->TYPE == HAVE_TOKEN){
 			if(item->sender != node->ID)
 						messageCounter++;
-			printf("HAVE_TOKEN recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##HAVE_TOKEN recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			node->receiveHaveTkn(*item);
 		}else if (item->TYPE == RELEASE){
 			if(item->sender != node->ID)
 						messageCounter++;
-			printf("RELEASE recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##RELEASE recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			node->receiveRelease(*item);
 		}else if (item->TYPE == REQUEST){
 			if(item->sender != node->ID)
 						messageCounter++;
-			printf("REQUEST recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##REQUEST recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			node->receiveRequest(*item);
 		}
 		else if(item->TYPE == END_PROCESS)
 		{
-			printf("END_PROCESS recieved from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
+			printf("##END_PROCESS recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			endProcessing(node->ID,messageCounter,timeCounter);
 		}
 		delete item;
+		node->displayStatus();
 	}
 	return NULL;
 }

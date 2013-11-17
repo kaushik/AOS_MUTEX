@@ -30,7 +30,7 @@ private:
 	int **Quorum;
 
 	char **mapIDtoIP;
-	char CS_FILENAME[25];
+	char CS_FileName[25];
 	void parseMsg(const string& s,const string& delim,std::vector<string>& tokens);
 	
 public:

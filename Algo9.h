@@ -38,6 +38,7 @@ public:
 	int getID();
 	bool getQuorumTable(int **quorumtable,int qsize,int nnodes);
 	bool requestCS();
+	bool isMaster(int master,int slave);
 	bool receiveRequest(Packet request);
 	int receiveToken(Packet request);
 	bool receiveRelease(Packet request);

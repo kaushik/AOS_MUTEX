@@ -119,10 +119,10 @@ void communication::HandleTCPClient(int clntSocket, wqueue<Packet*>* m_queue)
         DieWithError("recv() failed");*/
     if ((recvMsgSize = recv(clntSocket, &message, sizeof(message), 0)) < 0)
            DieWithError("recv() failed");
-	printf("Message type %d\n",message.TYPE);
-	printf("Message Originator %d\n", message.ORIGIN);
-	printf("Message Sequ %ld\n", message.SEQ);
-	printf("Message sender %d\n", message.sender);
+	//printf("Message type %d\n",message.TYPE);
+	//printf("Message Originator %d\n", message.ORIGIN);
+	//printf("Message Sequ %ld\n", message.SEQ);
+	//printf("Message sender %d\n", message.sender);
 
 	//if message is an Algorithm message add to queue
 	if(message.TYPE >=0 && message.TYPE <100){
