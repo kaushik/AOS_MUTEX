@@ -107,6 +107,112 @@ void Controller::handle(int clntSock1,char* client_ip,int counter,Controller *co
 
 }
 
+
+
+
+
+
+void *csListener(void*) {
+	
+	//Controller *con = (Controller*)c;
+	printf("In CS Listener\n");
+	/*communication com;
+	com.serverListen(1235,m_queue);*/
+	int counter=0;
+	int servSock;                    /* Socket descriptor for server */
+	int clntSock;                    /* Socket descriptor for client */
+	struct sockaddr_in echoServAddr; /* Local address */
+	struct sockaddr_in echoClntAddr; /* Client address */
+	unsigned short echoServPort;     /* Server port */
+	socklen_t clntLen;            /* Length of client address data structure */
+
+
+	echoServPort = LISTEN_PORT_CS;  /* First arg:  local port */
+
+	/* Create socket for incoming connections */
+	if ((servSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		DieWithError1("socket() failed");
+
+	/* Construct local address structure */
+	memset(&echoServAddr, 0, sizeof(echoServAddr));   /* Zero out structure */
+	echoServAddr.sin_family = AF_INET;                /* Internet address family */
+	echoServAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+	echoServAddr.sin_port = htons(echoServPort);      /* Local port */
+
+	/* Bind to the local address */
+	if (bind(servSock, (struct sockaddr *) &echoServAddr, sizeof(echoServAddr)) < 0)
+		DieWithError1("bind() failed");
+
+	/* Mark the socket so it will listen for incoming connections */
+	if (listen(servSock, MAXPENDING) < 0)
+		DieWithError1("listen() failed");
+	//int del=0;
+	for (;;) /* Run forever */
+	{
+		/* Set the size of the in-out parameter */
+		clntLen = sizeof(echoClntAddr);
+
+		/* Wait for a client to connect */
+		if ((clntSock = accept(servSock, (struct sockaddr *) &echoClntAddr,&clntLen)) < 0)
+		{
+			close(servSock);
+			DieWithError1("accept() failed");
+		}
+
+		/* clntSock is connected to a client! */
+		char *client_ip = inet_ntoa(echoClntAddr.sin_addr);
+		printf("\nClient socket %d, addlen : %d %s\n",clntSock,sizeof(client_ip),client_ip);
+		/*con->handle(clntSock,client_ip,counter,con);
+		counter++;*/
+		communication com;
+		Packet p;
+		com.readFromSocket(clntSock,&p,sizeof(p));
+		if(p.TYPE == ENTER_CS){
+		printf("Node %d Entered CS",p.ORIGIN);
+		shutdown(clntSock,0);
+				int k = close(clntSock);
+				if (k < 0) {
+						printf("\nError in Closing");
+						exit(0);
+				}
+		}
+		if(p.TYPE == END_CS)
+		{
+			printf("Node %d Exit the CS",p.ORIGIN);
+			int confirmation=1;
+			com.writeToSocket(clntSock,&confirmation,sizeof(int));
+			shutdown(clntSock,0);
+					int k = close(clntSock);
+					if (k < 0) {
+							printf("\nError in Closing");
+							exit(0);
+					}
+		}
+		
+		
+	}
+	shutdown(servSock,2);
+	int k = close(servSock);
+	if (k < 0) {
+		printf("\nError in Closing");
+		exit(0);
+	}
+
+	return NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 void *listener(void* c) {
 	
 	Controller *con = (Controller*)c;
@@ -442,6 +548,9 @@ int main()
 	c->initiate(c);
 	c->decideAlgorithm();
 
+	pthread_t csListenThread;
+		pthread_create(&csListenThread, NULL,csListener, NULL);
+		
 	printf("end of controller\n");
 		return 0;
 }
