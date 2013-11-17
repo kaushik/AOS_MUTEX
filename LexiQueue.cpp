@@ -64,7 +64,15 @@ Packet LexiQueue::top(){
 	return top;
 }
 
+/* adds to the queue
+ * handles duplicate entries by checking before adding
+ */
 bool LexiQueue::add(Packet in){
+	/*if(pq.empty()){
+			pq.push(in);
+			return true;
+	}*/
+	Packet temp = remove(in.ORIGIN,in.SEQ);//if element already there remove it and then replace
 	pq.push(in);
 	return true;
 }
@@ -87,6 +95,16 @@ bool LexiQueue::updateTorumQ(int **quorum,int qsize,int ID){
 	return true;
 }
 
+bool LexiQueue::contains(int origin,long seq){
+
+	Packet p = remove(origin,seq);
+	if(p.TYPE == -1){
+		return false;
+	}else{
+		add(p);
+		return true;
+	}
+}
 int LexiQueue::size(){
 	int ret = pq.size();
 	return ret;
@@ -102,3 +120,13 @@ bool LexiQueue::equalsTo(Packet m1, Packet m2){
     else
         return false;
    }
+
+void LexiQueue::displayContents(){
+	tempq = pq;
+	printf("Queue:");
+	while(!tempq.empty()){
+		printf("%d(%d,s:%d),",(tempq.top()).ORIGIN,(tempq.top()).sender,(tempq.top()).SEQ);
+		tempq.pop();
+	}
+	printf("\n");
+}

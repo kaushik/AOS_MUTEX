@@ -20,10 +20,13 @@ protected:
 	int quorumsize;
 	int NumNodes;
 	bool inCS;
-
+	Packet temppk;
+	int tempDest;
+	bool releaseflag;
 	//vector<vector<int>> quorum;;
 	pthread_mutex_t sharedQLock;
 	LexiQueue *queue;
+	LexiQueue *hqueue;
 
 
 public:

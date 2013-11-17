@@ -5,6 +5,8 @@
 #include "MessageFormat.h"
 #include <cstdlib>
 #include <queue>
+#include<iostream>
+#include<stdio.h>
 
 using namespace std;
 
@@ -32,6 +34,8 @@ public:
 	bool isEmpty();
 	bool updateTorumQ(int **quorum,int qsize,int ID);
 	bool equalsTo(Packet m1, Packet m2);
+	bool contains(int origin,long seq);
+	void displayContents();
 };
 
 class BlockingQueue{

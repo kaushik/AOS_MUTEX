@@ -422,9 +422,10 @@ void Controller::endProcess()
 			}
 		float avgMsg = (float)TotalNoMsgs/numOfCSRequests;
 		float avgTime = (float)TotalTime/numOfCSRequests;
+		avgTime = avgTime/1000;
 		printf("TotalNum of Msgs:%ld, TotalTime: %ld\n",TotalNoMsgs,TotalTime);
 		printf("Average Number of Messages used: %.3f, tested on %d requests\n",avgMsg,numOfCSRequests);
-		printf("Average Time Taken for each Request: %.3f, tested on %d requests\n",avgTime,numOfCSRequests);
+		printf("Average Time Taken for each Request(ms): %.3f, tested on %d requests\n",avgTime,numOfCSRequests);
 
 	printf("Bye!!!\n");
 }
