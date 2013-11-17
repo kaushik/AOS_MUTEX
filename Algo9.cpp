@@ -342,6 +342,8 @@ bool Torum::EnterTheCS(){
 	com.writeToSocket(sockfd,&p,sizeof(p));
 	com.closeSocket(sockfd);
 	sleep(5);
+	p.TYPE = END_CS;
+	sockfd = com.connectToServer(CONTROLLER_IP,LISTEN_PORT_CS);
 	com.writeToSocket(sockfd,&p,sizeof(p));
 	int confirmation=0;
 	com.readFromSocket(sockfd,&confirmation,sizeof(int));
