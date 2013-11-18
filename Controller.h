@@ -11,7 +11,8 @@
 #include <arpa/inet.h>  /* for sockaddr_in and inet_ntoa() */
 #include <stdlib.h>     /* for atoi() and exit() */
 #include <string.h>     /* for memset() */
-#include <unistd.h>  
+#include <sys/time.h>
+#include <unistd.h>
 #include "MessageFormat.h"
 #include"communication.h"
 using namespace std;

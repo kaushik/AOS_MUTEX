@@ -357,26 +357,13 @@ void Controller::Algorithm2(){
 void Controller::UserInput(){
 	printf("Enter your requests for critical section here...\n");
 	printf("");
-	
 	for(int i=0;;i++){
 		int id=0;
 		string input;
-		char tim;
-		printf("\n Do you want to set the timer? y/n : \n")
-		cin>>tim;
-		int timer=0;
-		if(tim == 'y')
-		{
-			printf("Enter the timer in seconds: \n");
-			cin>>timer;
-		}
-		
 		printf("Enter id to send request for CS (Use ':' to send the simultaneous requests )\n");
-		
-		//printf("\nTo specify the timer, give the timer at the end Ex 1:2:1 here last 1 is timer\n")
 		cin>>input;
 		vector<string> x = split(input, ':');
-		sleep(timer);
+		int c=0;
 			for( vector<string>::const_iterator i = x.begin(); i != x.end(); ++i)
 			{
 
@@ -385,6 +372,10 @@ void Controller::UserInput(){
 							endProcess();
 							return;
 						}
+				else if(c==0){
+					sleep(k);
+					c++;
+				}
 				else if(k < MAXNODES)
 					sendCSrequests(k);
 				else
@@ -468,6 +459,8 @@ void Controller::endProcess()
 	char desIP[16];
 	for(int n=0;n<MAXNODES;n++){
 	strncpy(desIP,mapIPtoID[n],16);
+	struct timeval end;
+	gettimeofday(&end, NULL);
 	printf("sending END_PROCESS to Node %d at IP %s\n",n,desIP);
 	com.sendMessage(pack1,desIP,LISTEN_PORT3);
 	}

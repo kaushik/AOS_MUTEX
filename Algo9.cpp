@@ -346,7 +346,6 @@ bool Torum::EnterTheCS(){
 	sockfd = com.connectToServer(CONTROLLER_IP,LISTEN_PORT_CS);
 	com.writeToSocket(sockfd,&p,sizeof(p));
 	int confirmation=0;
-	sleep(3);
 	com.readFromSocket(sockfd,&confirmation,sizeof(int));
 	if(confirmation != 1){
 		printf("Mutex voilated\n");
