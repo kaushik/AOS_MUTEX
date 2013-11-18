@@ -27,6 +27,7 @@ protected:
 	int ** quorum;
 	int quorumsize;
 	int NoOfnodes;
+    int NodesTotalNumber;
 	bool hasFailed;
 	bool hasCompletedCriticalSection;
     bool hasSentLockedMessage;
@@ -36,6 +37,8 @@ protected:
     int lockedBy;
     int hasReceivedLockedMessage;
     vector< vector<int> > quorumVote;
+//    int hasLockedFor[16];
+    vector< vector<int> > hasLockedFor;
     vector<int> relinquishList;
 	LexiQueue *queue;
     pthread_mutex_t sharedLock;

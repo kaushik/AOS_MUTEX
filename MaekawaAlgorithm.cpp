@@ -34,9 +34,21 @@ void MaekawaAlgorithm::initialization(){
     hasSentLockedMessagetoItself = false;
     hasReceivedFailedMessage = false;
     
-    hasSentRequestMessage = 0;
+    hasSentRequestMessage = -1;
     hasReceivedLockedMessage = 0;
+    NodesTotalNumber = 16;
 	pthread_mutex_init(&sharedLock, NULL);
+    
+    printf("**** hasLockedFor Table ****\n");
+    //initialize hasLockedFor table
+    for(int i = 0; i < NodesTotalNumber; i++){
+        vector<int> temp;
+        temp.push_back(i);
+        temp.push_back(0);
+        hasLockedFor.push_back(temp);
+        
+        printf("%d | %d",hasLockedFor[i][0],hasLockedFor[i][1]);
+    }
 }
 
 bool MaekawaAlgorithm::setProcessID(int pid){
@@ -124,7 +136,7 @@ void MaekawaAlgorithm::receiveMakeRequest(Packet makeRequest){
     printf("----Node %d has %d request to send.\n",processID,hasSentRequestMessage);
     
     //Call requestCriticalSection to broadcast request
-    if(hasSentRequestMessage == 1)
+    if(hasSentRequestMessage == 0)
         requestCriticalSection();
     
 }
@@ -159,11 +171,25 @@ bool MaekawaAlgorithm::receiveRequest(Packet request){
             com.sendMessageToID(locked, request.ORIGIN);
             lockedBy = request.ORIGIN;
             hasSentLockedMessage = true;
+            
+            //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
+            hasLockedFor[request.ORIGIN][1] = 1;
+            printf("**** hasLockedFor Table ****\n");
+            for(int k = 0; k < NodesTotalNumber; k++){
+                printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+            }
         }
         else if(request.ORIGIN == processID){
             lockedBy = request.ORIGIN;
             hasSentLockedMessage = true;
             printf("----Node %d has sent LOCKED message to itself\n",processID);
+            
+            //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
+            hasLockedFor[request.ORIGIN][1] = 1;
+            printf("**** hasLockedFor Table ****\n");
+            for(int k = 0; k < NodesTotalNumber; k++){
+                printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+            }
             receiveLocked(locked);
             printf("!!!!This message is supposed to show up after LOCK TO ITSELF message\n");
         }
@@ -266,16 +292,19 @@ bool MaekawaAlgorithm::receiveFailed(Packet failed) {
         relinquish.sender = -1;
         
         //send(relinquish);
-        if(relinquishList.back() != processID){
-            com.sendMessageToID(relinquish, relinquishList.back());
-            printf("----Node %d has sent RELINQUISH message to %d \n",processID,relinquishList.back());
-            relinquishList.pop_back();
+        if(relinquishList.back() != failed.ORIGIN){
+            if(relinquishList.back() != processID){
+                com.sendMessageToID(relinquish, relinquishList.back());
+                printf("----Node %d has sent RELINQUISH message to %d \n",processID,relinquishList.back());
+                relinquishList.pop_back();
+            }
+            else if(relinquishList.back() == processID){
+                printf("----Node %d has sent RELINQUISH message to itself\n",processID);
+                relinquishList.pop_back();
+                receiveRelinquish(relinquish);
+            }
         }
-        else if(relinquishList.back() == processID){
-            printf("----Node %d has sent RELINQUISH message to itself\n",processID);
-            relinquishList.pop_back();
-            receiveRelinquish(relinquish);
-        }
+
     }
     return true;
 }
@@ -294,14 +323,69 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
     locked.SEQ = sequenceNo;
     locked.sender = -1;
     
+    //Update hasLockedFor Table
+    hasLockedFor[relinquish.ORIGIN][1] = 0;
+    printf("----Node %d has release LOCK from %d \n",relinquish.ORIGIN,processID);
+    printf("**** Sent LOCKED Table ****\n");
+    for(int k = 0; k < NodesTotalNumber; k++){
+        printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+    }
+    
+    //Update quorumVote Table
+    printf("--^^--quorumVote Table--^^-- \n");
+    
+
+    
+
+    
+    if(relinquish.ORIGIN == processID){
+        for(int i = 0; i < quorumsize; i++){
+            printf("%d , %d \n",quorumVote[i][0],quorumVote[i][1]);
+            if(quorumVote[i][0] == processID){
+                quorumVote[i][1] = 0;
+            }
+        }
+        printf("----Node %d has received %d LOCKED messages \n",processID,hasReceivedLockedMessage);
+    }
     
     if(queue->top().ORIGIN != processID){
-        com.sendMessageToID(locked, queue->top().ORIGIN);
-        printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
+        //check if it has sent locked message to this node before
+        if(hasLockedFor[queue->top().ORIGIN][1] == 0){
+            com.sendMessageToID(locked, queue->top().ORIGIN);
+            
+            //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
+            hasLockedFor[queue->top().ORIGIN][1] = 1;
+            printf("**** Sent LOCKED Table ****\n");
+            for(int k = 0; k < NodesTotalNumber; k++){
+                printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+            }
+            printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
+        }
+        else if(hasLockedFor[queue->top().ORIGIN][1] == 1){
+            printf("----Node %d has already sent LOCKED message to %d \n ",processID,queue->top().ORIGIN);
+            printf("----It will not resend\n");
+        }
+
+        
     }
     else if(queue->top().ORIGIN == processID){
-        printf("----Node %d has sent LOCKED message to itself\n",processID);
-        receiveLocked(locked);
+        //check if it has sent locked message to this node before
+        if(hasLockedFor[queue->top().ORIGIN][1] == 0){
+            printf("----Node %d has sent LOCKED message to itself\n",processID);
+            
+            //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
+            hasLockedFor[queue->top().ORIGIN][1] = 1;
+            printf("**** Sent LOCKED Table ****\n");
+            for(int k = 0; k < NodesTotalNumber; k++){
+                printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+            }
+            receiveLocked(locked);
+        }
+        else if(hasLockedFor[queue->top().ORIGIN][1] == 1){
+            printf("----Node %d has already sent LOCKED message to itself \n ",processID);
+            printf("----It will not resend\n");
+        }
+
     }
 
 	return true;
@@ -370,13 +454,46 @@ bool MaekawaAlgorithm::receiveRelease(Packet release){
         queue->remove(release.ORIGIN);
     }
     
+    //Update hasLockedFor table
+    hasLockedFor[release.ORIGIN][1] = 0;
+    printf("----Node %d has release LOCK from %d \n",release.ORIGIN,processID);
+    printf("**** Sent LOCKED Table ****\n");
+    hasSentLockedMessage = false;
+    for(int k = 0; k < NodesTotalNumber; k++){
+        if(hasLockedFor[k][1] == 1)
+            hasSentLockedMessage = true;
+        printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+    }
+    
+
+    
+    
     if(queue->top().TYPE == -1 ){ //-1 means nothing in the queue
         
         printf("----After Node %d received release message, there is no more request in the queue \n",processID);
         hasSentLockedMessage = false;
-        return true;
     }
     else{
+        
+//        //check if it has sent locked message to this node before
+//        if(hasLockedFor[queue->top().ORIGIN == 0]){
+//            com.sendMessageToID(locked, queue->top().ORIGIN);
+//            
+//            //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
+//            hasLockedFor[queue->top().ORIGIN] = 1;
+//            printf("**** Sent LOCKED Table ****\n");
+//            for(int k = 0; k < NodesTotalNumber; k++){
+//                printf("%d | %d \n",k,hasLockedFor[k]);
+//            }
+//            printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
+//        }
+//        else{
+//            printf("----Node %d has already sent LOCKED message to %d \n ",processID,queue->top().ORIGIN);
+//            printf("----It will not resend\n");
+//        }
+        
+
+        
         struct Packet locked;
         locked.TYPE = LOCKED;
         locked.ORIGIN = processID;
@@ -387,21 +504,54 @@ bool MaekawaAlgorithm::receiveRelease(Packet release){
         printf("----After Node %d received release message, there is at least one request in the queue \n",processID);
         //print the request in the queue
         printf("----The request is: (%lu , %d) \n",queue->top().SEQ,queue->top().ORIGIN);
-        
-        if(queue->top().ORIGIN != processID){
-            com.sendMessageToID(locked, queue->top().ORIGIN);
-            printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
-            lockedBy = queue->top().ORIGIN;
-            hasSentLockedMessage = true;
+        if(hasSentLockedMessage == false){
+            if(queue->top().ORIGIN != processID){
+                
+                //check if it has sent locked message to this node before
+                if(hasLockedFor[queue->top().ORIGIN][1] == 0){
+                    
+                    hasLockedFor[queue->top().ORIGIN][1] = 1;
+                    
+                    com.sendMessageToID(locked, queue->top().ORIGIN);
+                    printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
+                    
+                    printf("**** Sent LOCKED Table ****\n");
+                    for(int k = 0; k < NodesTotalNumber; k++){
+                        printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+                    }
+                    lockedBy = queue->top().ORIGIN;
+                    hasSentLockedMessage = true;
+                }
+                
+            }
+            else if(queue->top().ORIGIN == processID){
+                if(hasLockedFor[queue->top().ORIGIN][1] == 0){
+                    
+                    hasLockedFor[queue->top().ORIGIN][1] = 1;
+                    
+                    lockedBy = queue->top().ORIGIN;
+                    hasSentLockedMessage = true;
+                    printf("----Node %d has sent LOCKED message to itself\n",processID);
+                    
+                    printf("**** Sent LOCKED Table ****\n");
+                    for(int k = 0; k < NodesTotalNumber; k++){
+                        printf("%d | %d \n",hasLockedFor[k][0],hasLockedFor[k][1]);
+                    }
+                    receiveLocked(locked);
+                }
+                
+            }
         }
-        else if(queue->top().ORIGIN == processID){
-            lockedBy = queue->top().ORIGIN;
-            hasSentLockedMessage = true;
-            printf("----Node %d has sent LOCKED message to itself\n",processID);
-            receiveLocked(locked);
-        }
+
         
-        return true;
+    }
+    if(release.ORIGIN == processID){
+        //Call requestCriticalSection to broadcast request
+        if(hasSentRequestMessage > 0){
+            requestCriticalSection();
+        }
+        hasSentRequestMessage--;
+        printf("----Node %d has %d request left to send.\n",processID,hasSentRequestMessage);
     }
     
 	return true;
@@ -417,11 +567,11 @@ void MaekawaAlgorithm::writeToFile(string filename,string line){
 }
 
 void MaekawaAlgorithm::enterCriticalSection(){
-	printf("\n\n******Node '%d' in CRITICAL SECTION******\n",processID);
+	printf("\n******Node '%d' in CRITICAL SECTION******\n",processID);
 	flagforCS =true;
     char buff[4095];
 	sprintf(buff,"Node %d entered CS, Seq: %ld \n",processID,sequenceNo);
-	writeToFile(CS_FILENAME,buff);
+	writeToFile("Resource.txt",buff);
 
     //sleep(15);
     hasCompletedCriticalSection = true;
@@ -445,11 +595,7 @@ void MaekawaAlgorithm::enterCriticalSection(){
     }
     sendRelease();
     
-    hasSentRequestMessage--;
-    printf("----Node %d has %d request left to send.\n",processID,hasSentRequestMessage);
-    //Call requestCriticalSection to broadcast request
-    if(hasSentRequestMessage > 0)
-        requestCriticalSection();
+
 }
 
 bool MaekawaAlgorithm::sendRelease(){
