@@ -365,7 +365,7 @@ void Controller::UserInput(){
 		printf("\n Do you want to set the timer? y/n : \n")
 		cin>>tim;
 		int timer=0;
-		if(tim = 'y')
+		if(tim == 'y')
 		{
 			printf("Enter the timer in seconds: \n");
 			cin>>timer;
