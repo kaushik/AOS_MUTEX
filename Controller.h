@@ -16,8 +16,8 @@
 #include"communication.h"
 using namespace std;
 
-#define MAXNODES 3
-#define QuorumSize 2
+#define MAXNODES 16
+#define QuorumSize 7
 #define CS_FILENAME "Resource.txt"
 class Controller
 {
