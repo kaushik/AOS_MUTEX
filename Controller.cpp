@@ -116,7 +116,7 @@ void Controller::handle(int clntSock1,char* client_ip,int counter,Controller *co
 void *csListener(void*) {
 	
 	//Controller *con = (Controller*)c;
-	printf("In CS Listener\n");
+	//printf("In CS Listener\n");
 	/*communication com;
 	com.serverListen(1235,m_queue);*/
 	int counter=0;
@@ -162,14 +162,14 @@ void *csListener(void*) {
 
 		/* clntSock is connected to a client! */
 		char *client_ip = inet_ntoa(echoClntAddr.sin_addr);
-		printf("\nClient socket %d, addlen : %d %s\n",clntSock,sizeof(client_ip),client_ip);
+		//printf("\nClient socket %d, addlen : %d %s\n",clntSock,sizeof(client_ip),client_ip);
 		/*con->handle(clntSock,client_ip,counter,con);
 		counter++;*/
 		communication com;
 		Packet p;
 		com.readFromSocket(clntSock,&p,sizeof(p));
 		if(p.TYPE == ENTER_CS){
-		printf("Node %d Entered CS",p.ORIGIN);
+		//printf("Node %d Entered CS",p.ORIGIN);
 	/*	shutdown(clntSock,0);
 				int k = close(clntSock);
 				if (k < 0) {
@@ -179,7 +179,7 @@ void *csListener(void*) {
 		}
 		if(p.TYPE == END_CS)
 		{
-			printf("Node %d Exit the CS",p.ORIGIN);
+			//printf("Node %d Exit the CS",p.ORIGIN);
 			int confirmation=1;
 			com.writeToSocket(clntSock,&confirmation,sizeof(int));
 			
@@ -357,13 +357,26 @@ void Controller::Algorithm2(){
 void Controller::UserInput(){
 	printf("Enter your requests for critical section here...\n");
 	printf("");
+	
 	for(int i=0;;i++){
 		int id=0;
 		string input;
+		char tim;
+		printf("\n Do you want to set the timer? y/n : \n")
+		cin>>tim;
+		int timer=0;
+		if(tim = 'y')
+		{
+			printf("Enter the timer in seconds: \n");
+			cin>>timer;
+		}
+		
 		printf("Enter id to send request for CS (Use ':' to send the simultaneous requests )\n");
+		
+		//printf("\nTo specify the timer, give the timer at the end Ex 1:2:1 here last 1 is timer\n")
 		cin>>input;
 		vector<string> x = split(input, ':');
-			
+		sleep(timer);
 			for( vector<string>::const_iterator i = x.begin(); i != x.end(); ++i)
 			{
 
