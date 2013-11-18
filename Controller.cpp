@@ -169,25 +169,27 @@ void *csListener(void*) {
 		com.readFromSocket(clntSock,&p,sizeof(p));
 		if(p.TYPE == ENTER_CS){
 		printf("Node %d Entered CS",p.ORIGIN);
-		shutdown(clntSock,0);
+	/*	shutdown(clntSock,0);
 				int k = close(clntSock);
 				if (k < 0) {
 						printf("\nError in Closing");
 						exit(0);
-				}
+				}*/
 		}
 		if(p.TYPE == END_CS)
 		{
 			printf("Node %d Exit the CS",p.ORIGIN);
 			int confirmation=1;
 			com.writeToSocket(clntSock,&confirmation,sizeof(int));
-			shutdown(clntSock,0);
-					int k = close(clntSock);
-					if (k < 0) {
-							printf("\nError in Closing");
-							exit(0);
-					}
+			
+				
 		}
+		shutdown(clntSock,0);
+		int k = close(clntSock);
+						if (k < 0) {
+								printf("\nError in Closing");
+								exit(0);
+						}
 		
 		
 	}
@@ -543,13 +545,14 @@ int main()
 {
 
 	Controller *c = new Controller;
+	pthread_t csListenThread;
+	pthread_create(&csListenThread, NULL,csListener, NULL);
 
 	printf("Welcome to Controller Function!!!\n");
 	c->initiate(c);
 	c->decideAlgorithm();
 
-	pthread_t csListenThread;
-		pthread_create(&csListenThread, NULL,csListener, NULL);
+	pthread_join(csListenThread,NULL);
 		
 	printf("end of controller\n");
 		return 0;
