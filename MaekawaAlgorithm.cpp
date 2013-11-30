@@ -573,7 +573,7 @@ void MaekawaAlgorithm::enterCriticalSection(){
 	sprintf(buff,"Node %d entered CS, Seq: %ld \n",processID,sequenceNo);
 	writeToFile("Resource.txt",buff);
 
-    //sleep(15);
+    sleep(30);
     hasCompletedCriticalSection = true;
     hasSentLockedMessage = false;
     

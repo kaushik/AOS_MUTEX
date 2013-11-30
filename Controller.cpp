@@ -169,7 +169,7 @@ void *csListener(void*) {
 		Packet p;
 		com.readFromSocket(clntSock,&p,sizeof(p));
 		if(p.TYPE == ENTER_CS){
-		//printf("Node %d Entered CS",p.ORIGIN);
+		printf("Node %d Entered CS",p.ORIGIN);
 	/*	shutdown(clntSock,0);
 				int k = close(clntSock);
 				if (k < 0) {
@@ -179,7 +179,7 @@ void *csListener(void*) {
 		}
 		if(p.TYPE == END_CS)
 		{
-			//printf("Node %d Exit the CS",p.ORIGIN);
+			printf("Node %d Exit the CS",p.ORIGIN);
 			int confirmation=1;
 			com.writeToSocket(clntSock,&confirmation,sizeof(int));
 			
