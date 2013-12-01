@@ -16,7 +16,7 @@
 #define MAKE_REQUEST 11
 #define END_PROCESS 12
 #define ENTER_CS 13
-#define END_CS 13
+#define END_CS 14
 
 #define CONTROLLER_ID 45
 #define CONTROLLER_IP "10.176.67.108"

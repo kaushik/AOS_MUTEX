@@ -13,7 +13,7 @@
 #include "Starter.h"
 #include "LexiQueue.h"
 using namespace std;
-
+/*
 int main() {
 	cout << "Mutual Exclusion" << endl; // prints Mutual Exclusion
 

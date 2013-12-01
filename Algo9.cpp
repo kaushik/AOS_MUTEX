@@ -330,6 +330,7 @@ void Torum::writeToFile(string filename,string line){
 	  }
 	  else cout << "Unable to open file";
 }
+
 bool Torum::EnterTheCS(){
 	inCS = true;
 	flagforCS =true;
@@ -341,14 +342,14 @@ bool Torum::EnterTheCS(){
 	p.sender = ID;
 	com.writeToSocket(sockfd,&p,sizeof(p));
 	com.closeSocket(sockfd);
-<<<<<<< HEAD
-	sleep(61);
-=======
-	sleep(60);
->>>>>>> 7bcbfcd6a6ddd6942848a12cc901abec7269c71c
-	p.TYPE = END_CS;
+	sleep(1);
+	Packet p2;
+	p2.TYPE = ENTER_CS;
+	p2.ORIGIN = ID;
+	p2.sender = ID;
+	p2.TYPE = END_CS;
 	sockfd = com.connectToServer(CONTROLLER_IP,LISTEN_PORT_CS);
-	com.writeToSocket(sockfd,&p,sizeof(p));
+	com.writeToSocket(sockfd,&p2,sizeof(p2));
 	int confirmation=0;
 	com.readFromSocket(sockfd,&confirmation,sizeof(int));
 	if(confirmation != 1){

@@ -252,6 +252,13 @@ void *TorumListen(void* mqueue) {
 	return NULL;
 }
 
+bool randDecision(){
+	int r = rand()%100;
+	if(r<30)
+		return false;
+	else
+		return true;
+}
 
 void *TorumProcess(void* mqueue) {
 	printf("TorumProcess Thread created\n");
@@ -275,21 +282,34 @@ void *TorumProcess(void* mqueue) {
 		Packet* item = m_queue->remove();
 		//printf("thread  loop %d - got one item\n", i);
 		//printf("Received: messageType - %d, SEQ number - %ld\n",item->TYPE, item->SEQ);
-
+		
+		//uncomment for unreliable
+		//if(!randDecision()){
+		//	printf("===>Missed a packet from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
+		//	delete item;
+		//	continue;
+		//}
 		if (item->TYPE == SEND_TOKEN){
 			printf("##SEND_TOKEN recieved from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
 			node->flagforCS = false;
 
+			struct timeval end;
+			gettimeofday(&end, NULL);
+			struct timeval start = timequeue.front();
+			seconds  = end.tv_sec  - start.tv_sec;
+			useconds = end.tv_usec - start.tv_usec;
+			utime = ((seconds) * 1000000 + useconds) + 0.5;
+
 			node->receiveToken(*item);
 
 			if(node->flagforCS){//node entered CS using this Token
-				struct timeval end;
-				gettimeofday(&end, NULL);
-				struct timeval start = timequeue.front();
+				//struct timeval end;
+				//gettimeofday(&end, NULL);
+				//struct timeval start = timequeue.front();
 				timequeue.pop();
-				seconds  = end.tv_sec  - start.tv_sec;
-				useconds = end.tv_usec - start.tv_usec;
-				utime = ((seconds) * 1000000 + useconds) + 0.5;
+				//seconds  = end.tv_sec  - start.tv_sec;
+				//useconds = end.tv_usec - start.tv_usec;
+				//utime = ((seconds) * 1000000 + useconds) + 0.5;
 				timeCounter += utime;
 			}
 			if(item->sender != node->ID)
@@ -346,16 +366,26 @@ void *MaekawaProcess(void* iqueue) {
 	//getting time for CS grant
 	long utime, seconds, useconds;
 	queue<struct timeval> timequeue;
+	//struct timeval start1;
 
 	wqueue<Packet*>*m_queue=(wqueue<Packet*>*)iqueue;
 	MaekawaAlgorithm *mnode = MaekawaAlgorithm::getInstance();
 	sleep(5);
+
+	long s=1;
+	long e =0;
 	// Remove 1 item at a time and process it. Blocks if no items are
 	// available to process.
 	for (int i = 0;; i++) {
 		printf("MaekawaProcessing Thread , loop %d - waiting for item...\n", i);
 		Packet* item = m_queue->remove();
 		//printf("thread  loop %d - got one item\n", i);
+		
+		//uncomment for unreliable
+		//if(!randDecision()){
+		//	printf("===>Missed a packet from Node %d(Origin: %d) and packet type is %d\n",item->sender,item->ORIGIN,item->TYPE);
+		//	continue;
+		//}
 		printf("Received: messageType - %d, SEQ number - %ld\n",item->TYPE, item->SEQ);
 
         switch (item->TYPE) {
@@ -364,6 +394,8 @@ void *MaekawaProcess(void* iqueue) {
                 struct timeval start;
                 gettimeofday(&start, NULL);
                 timequeue.push(start);
+                s = start.tv_sec;
+                printf("start time: %l\n",s);
                 mnode->receiveMakeRequest(*item);
 
                 break;
@@ -400,16 +432,27 @@ void *MaekawaProcess(void* iqueue) {
             case LOCKED:
                 printf(" ## LOCKED received from Node %d and packet type is %d\n",item->ORIGIN,item->TYPE);
                 mnode->flagforCS = false;
+                struct timeval end;
+				gettimeofday(&end, NULL);
+				e = end.tv_sec;
+
+				struct timeval start1;
+				start1 = timequeue.front();
+				seconds  = end.tv_sec  - start1.tv_sec;
+				useconds = end.tv_usec - start1.tv_usec;
+				utime = ((seconds) * 1000000 + useconds) + 0.5;
+				printf("end time:%l, totaltime: %l",e,utime);
                 mnode->receiveLocked(*item);
-                if(mnode->flagforCS){//node entered CS using this Token
-					struct timeval end;
-					gettimeofday(&end, NULL);
-					struct timeval start = timequeue.front();
+                if(mnode->flagforCS){//node entered CS on this Locked
+					//struct timeval end;
+					//gettimeofday(&end, NULL);
+					//struct timeval start = timequeue.front();
 					timequeue.pop();
-					seconds  = end.tv_sec  - start.tv_sec;
-					useconds = end.tv_usec - start.tv_usec;
-					utime = ((seconds) * 1000000 + useconds) + 0.5;
+					//seconds  = end.tv_sec  - start.tv_sec;
+					//useconds = end.tv_usec - start.tv_usec;
+					//utime = ((seconds) * 1000000 + useconds) + 0.5;
 					timeCounter += utime;
+
 				}
 				if(item->ORIGIN != mnode->processID)
 				messageCounter++;
