@@ -47,7 +47,7 @@ void MaekawaAlgorithm::initialization(){
         temp.push_back(0);
         hasLockedFor.push_back(temp);
         
-        printf("%d | %d",hasLockedFor[i][0],hasLockedFor[i][1]);
+        printf("**** %d | %d ****\n",hasLockedFor[i][0],hasLockedFor[i][1]);
     }
 }
 
@@ -246,7 +246,27 @@ bool MaekawaAlgorithm::receiveInquire(Packet inquire) {
         //Put the ORIGIN of inquire into list
         relinquishList.push_back(inquire.ORIGIN);
     
-    if(hasSentLockedMessage == true && hasReceivedFailedMessage == true){
+    if(hasSentLockedMessage == true && hasReceivedFailedMessage == true && inquire.ORIGIN != processID){
+        struct Packet relinquish;
+        relinquish.TYPE = RELINQUISH;
+        relinquish.ORIGIN = processID;
+        relinquish.SEQ = sequenceNo;
+        relinquish.sender = -1;
+        
+        //send(relinquish);
+        if(inquire.ORIGIN != processID){
+            com.sendMessageToID(relinquish, inquire.ORIGIN);
+            printf("----Node %d has sent RELINQUISH message to %d \n",processID,inquire.ORIGIN);
+        }
+        else if(inquire.ORIGIN == processID){
+            printf("----Node %d has sent RELINQUISH message to itself\n",processID);
+            receiveRelinquish(relinquish);
+        }
+    }
+    
+    if(hasSentLockedMessage == true && inquire.ORIGIN == processID){
+        
+        printf("----Node %d will ever receive RELINQUISH message \n",processID);
         struct Packet relinquish;
         relinquish.TYPE = RELINQUISH;
         relinquish.ORIGIN = processID;
@@ -334,16 +354,13 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
     //Update quorumVote Table
     printf("--^^--quorumVote Table--^^-- \n");
     
-
-    
-
-    
     if(relinquish.ORIGIN == processID){
         for(int i = 0; i < quorumsize; i++){
-            printf("%d , %d \n",quorumVote[i][0],quorumVote[i][1]);
             if(quorumVote[i][0] == processID){
                 quorumVote[i][1] = 0;
+                hasReceivedLockedMessage--;
             }
+            printf("%d , %d \n",quorumVote[i][0],quorumVote[i][1]);
         }
         printf("----Node %d has received %d LOCKED messages \n",processID,hasReceivedLockedMessage);
     }
@@ -352,6 +369,9 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
         //check if it has sent locked message to this node before
         if(hasLockedFor[queue->top().ORIGIN][1] == 0){
             com.sendMessageToID(locked, queue->top().ORIGIN);
+            
+            hasSentLockedMessage = true;
+            lockedBy = queue->top().ORIGIN;
             
             //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
             hasLockedFor[queue->top().ORIGIN][1] = 1;
@@ -362,6 +382,10 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
             printf("----Node %d has sent LOCKED message to %d \n",processID,queue->top().ORIGIN);
         }
         else if(hasLockedFor[queue->top().ORIGIN][1] == 1){
+            
+            hasSentLockedMessage = true;
+            lockedBy = queue->top().ORIGIN;
+            
             printf("----Node %d has already sent LOCKED message to %d \n ",processID,queue->top().ORIGIN);
             printf("----It will not resend\n");
         }
@@ -371,6 +395,11 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
     else if(queue->top().ORIGIN == processID){
         //check if it has sent locked message to this node before
         if(hasLockedFor[queue->top().ORIGIN][1] == 0){
+            
+            hasSentLockedMessage = true;
+            hasReceivedLockedMessage = true;
+            lockedBy = queue->top().ORIGIN;
+            
             printf("----Node %d has sent LOCKED message to itself\n",processID);
             
             //The node will know that it has sent locked message to a certain node, so it will not send duplicate locked message.
@@ -382,6 +411,10 @@ bool MaekawaAlgorithm::receiveRelinquish(Packet relinquish){
             receiveLocked(locked);
         }
         else if(hasLockedFor[queue->top().ORIGIN][1] == 1){
+            
+            hasSentLockedMessage = true;
+            hasReceivedLockedMessage = true;
+            lockedBy = queue->top().ORIGIN;
             printf("----Node %d has already sent LOCKED message to itself \n ",processID);
             printf("----It will not resend\n");
         }
