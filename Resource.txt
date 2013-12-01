@@ -1,0 +1,17 @@
+#This file contains log of Critical Section Requests from the Nodes
+Node 0 entered CS, Seq: 2 
+
+Node 5 entered CS, Seq: 2 
+
+Node 6 entered CS, Seq: 2 
+
+Node 7 entered CS, Seq: 2 
+
+Node 9 entered CS, Seq: 2 
+
+Node 11 entered CS, Seq: 2 
+
+Node 13 entered CS, Seq: 2 
+
+Node 15 entered CS, Seq: 2 
+

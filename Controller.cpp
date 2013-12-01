@@ -467,7 +467,11 @@ void Controller::endProcess()
 
 
 	int TotalNoMsgs = 0;
+<<<<<<< HEAD
+	long int TotalTime = 0;
+=======
 	int TotalTime = 0;
+>>>>>>> 7bcbfcd6a6ddd6942848a12cc901abec7269c71c
 	printf("End of Algorithm!!\n Calculating the statistics . . .\n");
 	int counter=0;
 		int servSock;                    /* Socket descriptor for server */
@@ -536,11 +540,19 @@ void Controller::endProcess()
 				exit(0);
 			}
 		float avgMsg = (float)TotalNoMsgs/numOfCSRequests;
+<<<<<<< HEAD
+		long double avgTime = (double)TotalTime/numOfCSRequests;
+		avgTime = avgTime/1000;
+		printf("TotalNum of Msgs:%ld, TotalTime: %ld\n",TotalNoMsgs,TotalTime);
+		printf("Average Number of Messages used: %.3f, tested on %d requests\n",avgMsg,numOfCSRequests);
+		printf("Average Time Taken for each Request(ms): %.3ld, tested on %d requests\n",avgTime,numOfCSRequests);
+=======
 		float avgTime = (float)TotalTime/numOfCSRequests;
 		avgTime = avgTime/1000;
 		printf("TotalNum of Msgs:%ld, TotalTime: %ld\n",TotalNoMsgs,TotalTime);
 		printf("Average Number of Messages used: %.3f, tested on %d requests\n",avgMsg,numOfCSRequests);
 		printf("Average Time Taken for each Request(ms): %.3f, tested on %d requests\n",avgTime,numOfCSRequests);
+>>>>>>> 7bcbfcd6a6ddd6942848a12cc901abec7269c71c
 
 	printf("Bye!!!\n");
 }
